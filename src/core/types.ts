@@ -5,6 +5,8 @@ export interface User {
   role?: string;
   roles?: string[];
   groups?: Group[];
+  telp?: string;
+  gender?: string;
 }
 
 export interface Group {

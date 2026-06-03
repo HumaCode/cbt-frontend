@@ -43,6 +43,13 @@ export default function DashboardPage() {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // Profile completion states
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [profileName, setProfileName] = useState('');
+  const [profileTelp, setProfileTelp] = useState('');
+  const [profileGender, setProfileGender] = useState('');
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -188,8 +195,59 @@ export default function DashboardPage() {
       return;
     }
 
+    // Check if user has complete identity info (telp and gender)
+    if (!user?.telp || !user?.gender) {
+      setSelectedAssessment(assessment);
+      setProfileName(user?.name || '');
+      setProfileTelp(user?.telp || '');
+      setProfileGender(user?.gender || '');
+      setIsProfileModalOpen(true);
+      return;
+    }
+
     setSelectedAssessment(assessment);
     setIsStartModalOpen(true);
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!profileName.trim() || !profileTelp.trim() || !profileGender) {
+      addToast({
+        type: 'warning',
+        title: 'Formulir Belum Lengkap',
+        message: 'Semua bidang identitas wajib diisi.',
+      });
+      return;
+    }
+
+    setIsUpdatingProfile(true);
+    try {
+      const updatedUser = await authRepository.updateProfile(
+        profileName,
+        profileTelp,
+        profileGender
+      );
+      setUser(updatedUser);
+      setIsProfileModalOpen(false);
+      
+      addToast({
+        type: 'success',
+        title: 'Profil Diperbarui',
+        message: 'Identitas berhasil dilengkapi. Silakan konfirmasi untuk mulai ujian.',
+      });
+      
+      // Auto open start confirmation modal after saving profile
+      setIsStartModalOpen(true);
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Memperbarui Profil',
+        message: err.response?.data?.message || 'Terjadi kesalahan saat memperbarui profil Anda.',
+      });
+    } finally {
+      setIsUpdatingProfile(false);
+    }
   };
 
   const handleStartExam = async () => {
@@ -456,6 +514,108 @@ export default function DashboardPage() {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Profile Completion Modal */}
+      <Modal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        title="Lengkapi Identitas Diri"
+        size="md"
+      >
+        <form onSubmit={handleSaveProfile} className="space-y-4">
+          <p className="text-sm text-zinc-550 dark:text-zinc-400 leading-relaxed">
+            Sebelum memulai ujian, Anda wajib melengkapi data identitas berikut untuk keperluan administrasi dan pelaporan hasil ujian.
+          </p>
+
+          <div className="space-y-3.5">
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">
+                Nama Lengkap
+              </label>
+              <input
+                type="text"
+                required
+                value={profileName}
+                onChange={(e) => setProfileName(e.target.value)}
+                placeholder="Masukkan nama lengkap Anda"
+                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-205"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1">
+                Nomor Telepon / WhatsApp
+              </label>
+              <input
+                type="tel"
+                required
+                value={profileTelp}
+                onChange={(e) => setProfileTelp(e.target.value)}
+                placeholder="Contoh: 081234567890"
+                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900/50 text-zinc-900 dark:text-zinc-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-205"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 dark:text-zinc-300 uppercase tracking-wider mb-1.5">
+                Jenis Kelamin
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <label className={`flex items-center justify-center gap-2 p-3.5 rounded-xl border cursor-pointer transition-all duration-200 ${
+                  profileGender === 'male'
+                    ? 'border-blue-500 bg-blue-50/50 text-blue-700 dark:bg-blue-950/20 dark:text-blue-400 dark:border-blue-900/50 font-semibold'
+                    : 'border-zinc-200 dark:border-zinc-850 text-zinc-650 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 dark:text-zinc-400'
+                }`}>
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="male"
+                    checked={profileGender === 'male'}
+                    onChange={() => setProfileGender('male')}
+                    className="sr-only"
+                  />
+                  <span>Laki-laki</span>
+                </label>
+
+                <label className={`flex items-center justify-center gap-2 p-3.5 rounded-xl border cursor-pointer transition-all duration-200 ${
+                  profileGender === 'female'
+                    ? 'border-pink-500 bg-pink-50/50 text-pink-700 dark:bg-pink-950/20 dark:text-pink-400 dark:border-pink-900/50 font-semibold'
+                    : 'border-zinc-200 dark:border-zinc-850 text-zinc-650 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 dark:text-zinc-400'
+                }`}>
+                  <input
+                    type="radio"
+                    name="gender"
+                    value="female"
+                    checked={profileGender === 'female'}
+                    onChange={() => setProfileGender('female')}
+                    className="sr-only"
+                  />
+                  <span>Perempuan</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800/60 mt-5">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => !isUpdatingProfile && setIsProfileModalOpen(false)}
+              disabled={isUpdatingProfile}
+              className="cursor-pointer"
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              isLoading={isUpdatingProfile}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold cursor-pointer"
+            >
+              Simpan & Lanjutkan
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

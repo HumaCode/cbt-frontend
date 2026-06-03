@@ -37,6 +37,15 @@ export const authRepository = {
     return response.data.data as User;
   },
 
+  async updateProfile(name: string, telp: string, gender: string): Promise<User> {
+    const response = await api.put('/auth/profile', {
+      name,
+      telp,
+      gender,
+    });
+    return response.data.data as User;
+  },
+
   async logout(): Promise<void> {
     await api.post('/auth/logout');
     deleteCookie('cbt_token');
