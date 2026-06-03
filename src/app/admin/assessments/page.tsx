@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { assessmentRepository } from '@/infrastructure/repositories/assessmentRepository';
+import { groupRepository, Group } from '@/infrastructure/repositories/groupRepository';
 import { Assessment, Question, Category } from '@/core/types';
 import { Card } from '@/presentation/components/Card';
 import { Button } from '@/presentation/components/Button';
@@ -20,6 +21,8 @@ export default function AssessmentsPage() {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   const handleSharePublicMonitor = (examId: string) => {
@@ -62,20 +65,22 @@ export default function AssessmentsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [exams, quests, cats] = await Promise.all([
+      const [exams, quests, cats, allGroups] = await Promise.all([
         assessmentRepository.getAssessments(),
         assessmentRepository.getQuestions(),
         assessmentRepository.getCategories(),
+        groupRepository.getGroups(),
       ]);
       setAssessments(exams);
       setQuestions(quests);
       setCategories(cats);
+      setGroups(allGroups);
     } catch (err) {
       console.error(err);
       addToast({
         type: 'error',
         title: 'Gagal Memuat Data',
-        message: 'Tidak dapat mengambil jadwal ujian atau daftar soal.',
+        message: 'Tidak dapat mengambil jadwal ujian, daftar soal, atau grup.',
       });
     } finally {
       setLoading(false);
@@ -108,6 +113,7 @@ export default function AssessmentsPage() {
     setRandomizeQuestions(false);
     setRandomizeOptions(false);
     setSelectedQuestionIds({});
+    setSelectedGroupIds([]);
     setFilterCategoryIds([]);
     setQuestionSearchQuery('');
     setIsOpen(true);
@@ -135,6 +141,7 @@ export default function AssessmentsPage() {
         qMap[q.id] = true;
       });
       setSelectedQuestionIds(qMap);
+      setSelectedGroupIds(detail.groups?.map((g) => g.id) || []);
       setFilterCategoryIds([]);
       setQuestionSearchQuery('');
       setIsOpen(true);
@@ -176,6 +183,7 @@ export default function AssessmentsPage() {
       randomize_questions: randomizeQuestions,
       randomize_options: randomizeOptions,
       questions: finalQuestionIds,
+      group_ids: selectedGroupIds,
     };
 
     try {
@@ -587,6 +595,42 @@ export default function AssessmentsPage() {
               />
               Acak Opsi Pilihan
             </label>
+          </div>
+
+          {/* Group Allowed checklist */}
+          <div className="space-y-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+            <label className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Grup Peserta yang Diizinkan Mengikuti Ujian</label>
+            {groups.length === 0 ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Belum ada grup peserta. Silakan buat grup terlebih dahulu di menu Peserta & Grup.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2 p-3 rounded-xl border border-zinc-250 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20">
+                {groups.map((group) => {
+                  const isChecked = selectedGroupIds.includes(group.id);
+                  return (
+                    <button
+                      key={group.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedGroupIds(prev => 
+                          prev.includes(group.id)
+                            ? prev.filter(id => id !== group.id)
+                            : [...prev, group.id]
+                        );
+                      }}
+                      disabled={submitting}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${
+                        isChecked
+                          ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950/30 dark:border-blue-900/40 dark:text-blue-400'
+                          : 'bg-white border-zinc-200 text-zinc-650 hover:bg-zinc-50 dark:bg-zinc-900 dark:border-zinc-800 dark:text-zinc-400'
+                      }`}
+                    >
+                      <span>{group.name}</span>
+                      {isChecked && <CheckSquare className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Question List Checklist */}

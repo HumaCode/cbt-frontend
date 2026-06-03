@@ -15,6 +15,7 @@ import {
   FolderKanban, 
   HelpCircle, 
   BookOpen, 
+  Users,
   ArrowLeft,
   LogOut,
   Menu,
@@ -84,6 +85,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Kategori Soal', path: '/admin/categories', icon: FolderKanban },
     { name: 'Bank Soal', path: '/admin/questions', icon: HelpCircle },
     { name: 'Jadwal Ujian', path: '/admin/assessments', icon: BookOpen },
+    { name: 'Peserta & Grup', path: '/admin/users', icon: Users },
   ];
 
   return (
