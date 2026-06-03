@@ -7,6 +7,7 @@ import { Card } from '@/presentation/components/Card';
 import { Button } from '@/presentation/components/Button';
 import { Modal } from '@/presentation/components/Modal';
 import { Input } from '@/presentation/components/Input';
+import { DateTimePicker } from '@/presentation/components/DateTimePicker';
 import { useToastStore } from '@/presentation/components/Toast';
 import { Plus, Edit2, Trash2, BookOpen, Clock, Award, Calendar, CheckSquare, Square } from 'lucide-react';
 import { Spinner } from '@/presentation/components/Spinner';
@@ -364,19 +365,17 @@ export default function AssessmentsPage() {
           />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              type="datetime-local"
+            <DateTimePicker
               label="Tanggal Mulai"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={setStartDate}
               required
               disabled={submitting}
             />
-            <Input
-              type="datetime-local"
+            <DateTimePicker
               label="Tanggal Selesai"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={setEndDate}
               required
               disabled={submitting}
             />
