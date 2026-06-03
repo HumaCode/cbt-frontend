@@ -240,11 +240,22 @@ export default function DashboardPage() {
 
           {assessments.length === 0 ? (
             <Card className="flex flex-col items-center justify-center p-12 text-center border-dashed dark:bg-zinc-900/20">
-              <AlertCircle className="h-10 w-10 text-zinc-400 mb-3" />
-              <h3 className="font-semibold text-zinc-800 dark:text-zinc-200">Tidak Ada Ujian Tersedia</h3>
-              <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-xs">
-                Saat ini belum ada jadwal ujian aktif untuk kelas atau kelompok Anda.
-              </p>
+              <AlertCircle className="h-10 w-10 text-amber-500 dark:text-amber-450 mb-3" />
+              {user?.groups && user.groups.length === 0 ? (
+                <>
+                  <h3 className="font-semibold text-zinc-800 dark:text-zinc-200">Anda Belum Terdaftar di Grup Manapun</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-md">
+                    Anda tidak dapat melihat atau mengikuti ujian karena belum dimasukkan ke dalam grup peserta. Silakan hubungi admin ujian untuk mengundang Anda ke grup kelas.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h3 className="font-semibold text-zinc-800 dark:text-zinc-200">Tidak Ada Ujian Tersedia</h3>
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-xs">
+                    Saat ini belum ada jadwal ujian aktif untuk kelas atau kelompok Anda.
+                  </p>
+                </>
+              )}
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
