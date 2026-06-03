@@ -8,7 +8,7 @@ import { Button } from '@/presentation/components/Button';
 import { Modal } from '@/presentation/components/Modal';
 import { Input } from '@/presentation/components/Input';
 import { useToastStore } from '@/presentation/components/Toast';
-import { Plus, Edit2, Trash2, HelpCircle, Check, X, Layers } from 'lucide-react';
+import { Plus, Edit2, Trash2, HelpCircle, Check, X, Layers, ArrowLeft, Folder } from 'lucide-react';
 import { Spinner } from '@/presentation/components/Spinner';
 
 export default function QuestionsPage() {
@@ -22,6 +22,9 @@ export default function QuestionsPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  
+  // Category navigation state
+  const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
 
   // Form states
   const [categoryId, setCategoryId] = useState('');
@@ -64,7 +67,7 @@ export default function QuestionsPage() {
 
   const handleOpenCreate = () => {
     setSelectedQuestion(null);
-    setCategoryId(categories[0]?.id || '');
+    setCategoryId(activeCategoryId && activeCategoryId !== 'all' ? activeCategoryId : (categories[0]?.id || ''));
     setType('pg');
     setDifficulty('easy');
     setContentText('');
@@ -219,22 +222,51 @@ export default function QuestionsPage() {
     }
   };
 
+  const categoryCounts = categories.reduce((acc, cat) => {
+    acc[cat.id] = questions.filter((q) => q.category_id === cat.id).length;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const activeCategoryName = activeCategoryId === 'all'
+    ? 'Semua Soal'
+    : categories.find((c) => c.id === activeCategoryId)?.name || 'Kategori';
+
+  const filteredQuestions = activeCategoryId === 'all'
+    ? questions
+    : questions.filter((q) => q.category_id === activeCategoryId);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
-            <HelpCircle className="h-6 w-6 text-blue-600" />
-            Bank Soal
-          </h1>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Kelola koleksi soal ujian pilihan ganda dan esai Anda.
+          <div className="flex items-center gap-2">
+            {activeCategoryId !== null && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setActiveCategoryId(null)}
+                className="p-2 rounded-xl text-zinc-550 border-zinc-200 hover:text-zinc-800 dark:border-zinc-800 dark:hover:text-white"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-550 flex items-center gap-2">
+              <HelpCircle className="h-6 w-6 text-blue-600" />
+              Bank Soal {activeCategoryId !== null && `• ${activeCategoryName}`}
+            </h1>
+          </div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            {activeCategoryId === null
+              ? 'Pilih kategori soal untuk mulai mengelola kumpulan pertanyaan.'
+              : `Mengelola butir soal ujian untuk kategori ${activeCategoryName}.`}
           </p>
         </div>
-        <Button onClick={handleOpenCreate} className="flex items-center gap-2" disabled={categories.length === 0}>
-          <Plus className="h-4 w-4" />
-          <span>Tambah Soal</span>
-        </Button>
+        {activeCategoryId !== null && (
+          <Button onClick={handleOpenCreate} className="flex items-center gap-2" disabled={categories.length === 0}>
+            <Plus className="h-4 w-4" />
+            <span>Tambah Soal</span>
+          </Button>
+        )}
       </div>
 
       {categories.length === 0 && !loading && (
@@ -247,12 +279,53 @@ export default function QuestionsPage() {
         <div className="flex h-[40vh] items-center justify-center">
           <Spinner label="Memuat Bank Soal..." />
         </div>
-      ) : questions.length === 0 ? (
+      ) : activeCategoryId === null ? (
+        // Grid View of Categories (Folder Structure)
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Virtual Folder "Semua Soal" */}
+          <div
+            onClick={() => setActiveCategoryId('all')}
+            className="group relative cursor-pointer overflow-hidden p-6 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/30 backdrop-blur-sm shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-500/30"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform duration-300">
+                <Folder className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-zinc-900 dark:text-zinc-100">Semua Soal</h3>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{questions.length} Butir Soal</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Actual Categories list */}
+          {categories.map((cat) => {
+            const count = categoryCounts[cat.id] || 0;
+            return (
+              <div
+                key={cat.id}
+                onClick={() => setActiveCategoryId(cat.id)}
+                className="group relative cursor-pointer overflow-hidden p-6 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/30 backdrop-blur-sm shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-indigo-500/30"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="p-3.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 group-hover:scale-110 transition-transform duration-300">
+                    <Folder className="h-6 w-6" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-bold text-zinc-900 dark:text-zinc-100 truncate">{cat.name}</h3>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">{count} Butir Soal</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : filteredQuestions.length === 0 ? (
         <Card className="flex flex-col items-center justify-center p-12 text-center border-dashed bg-white dark:bg-zinc-900/10">
           <HelpCircle className="h-10 w-10 text-zinc-400 mb-3" />
           <h3 className="font-semibold text-zinc-800 dark:text-zinc-200">Belum Ada Soal</h3>
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1 max-w-xs">
-            Klik tombol "Tambah Soal" di atas untuk menambahkan butir pertanyaan pertama Anda.
+            Belum ada soal dalam kategori ini. Klik tombol "Tambah Soal" untuk menambahkan soal baru.
           </p>
         </Card>
       ) : (
@@ -269,7 +342,7 @@ export default function QuestionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/80">
-                {questions.map((quest) => {
+                {filteredQuestions.map((quest) => {
                   const catName = categories.find((c) => c.id === quest.category_id)?.name || 'N/A';
                   return (
                     <tr key={quest.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">

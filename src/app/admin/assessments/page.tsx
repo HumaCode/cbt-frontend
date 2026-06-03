@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { assessmentRepository } from '@/infrastructure/repositories/assessmentRepository';
-import { Assessment, Question } from '@/core/types';
+import { Assessment, Question, Category } from '@/core/types';
 import { Card } from '@/presentation/components/Card';
 import { Button } from '@/presentation/components/Button';
 import { Modal } from '@/presentation/components/Modal';
@@ -16,6 +16,7 @@ export default function AssessmentsPage() {
 
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Modal states
@@ -35,18 +36,23 @@ export default function AssessmentsPage() {
   
   // Selected Questions mapping
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<Record<string, boolean>>({});
+  
+  // Category filters mapping in creation modal
+  const [filterCategoryIds, setFilterCategoryIds] = useState<string[]>([]);
 
   const [submitting, setSubmitting] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [exams, quests] = await Promise.all([
+      const [exams, quests, cats] = await Promise.all([
         assessmentRepository.getAssessments(),
         assessmentRepository.getQuestions(),
+        assessmentRepository.getCategories(),
       ]);
       setAssessments(exams);
       setQuestions(quests);
+      setCategories(cats);
     } catch (err) {
       console.error(err);
       addToast({
@@ -88,6 +94,7 @@ export default function AssessmentsPage() {
     setRandomizeQuestions(false);
     setRandomizeOptions(false);
     setSelectedQuestionIds({});
+    setFilterCategoryIds([]);
     setIsOpen(true);
   };
 
@@ -106,14 +113,13 @@ export default function AssessmentsPage() {
       setRandomizeQuestions(!!detail.randomize_questions);
       setRandomizeOptions(!!detail.randomize_options);
 
-      // Map active question ids
-      const mappedIds: Record<string, boolean> = {};
-      if (detail.questions) {
-        detail.questions.forEach((q) => {
-          mappedIds[q.id] = true;
-        });
-      }
-      setSelectedQuestionIds(mappedIds);
+      // Setup selected questions map
+      const qMap: Record<string, boolean> = {};
+      detail.questions?.forEach((q) => {
+        qMap[q.id] = true;
+      });
+      setSelectedQuestionIds(qMap);
+      setFilterCategoryIds([]);
       setIsOpen(true);
     } catch (err) {
       console.error(err);
@@ -205,6 +211,36 @@ export default function AssessmentsPage() {
       setSubmitting(false);
     }
   };
+
+  const toggleCategoryFilter = (catId: string) => {
+    setFilterCategoryIds((prev) =>
+      prev.includes(catId) ? prev.filter((id) => id !== catId) : [...prev, catId]
+    );
+  };
+
+  const selectAllFiltered = (filteredQuests: Question[]) => {
+    setSelectedQuestionIds((prev) => {
+      const next = { ...prev };
+      filteredQuests.forEach((q) => {
+        next[q.id] = true;
+      });
+      return next;
+    });
+  };
+
+  const deselectAllFiltered = (filteredQuests: Question[]) => {
+    setSelectedQuestionIds((prev) => {
+      const next = { ...prev };
+      filteredQuests.forEach((q) => {
+        delete next[q.id];
+      });
+      return next;
+    });
+  };
+
+  const filteredQuestions = filterCategoryIds.length === 0
+    ? questions
+    : questions.filter((q) => filterCategoryIds.includes(q.category_id));
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -403,32 +439,88 @@ export default function AssessmentsPage() {
 
           {/* Question List Checklist */}
           <div className="space-y-3 pt-4 border-t border-zinc-200 dark:border-zinc-800">
-            <label className="text-sm font-bold text-zinc-900 dark:text-zinc-100 block">
-              Pilih Butir Soal yang Diujikan
-            </label>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+                Pilih Butir Soal yang Diujikan
+              </label>
+              {filterCategoryIds.length > 0 && (
+                <div className="flex gap-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => selectAllFiltered(filteredQuestions)}
+                    className="text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
+                  >
+                    Pilih Semua yang Tampil ({filteredQuestions.length})
+                  </button>
+                  <span className="text-zinc-300">|</span>
+                  <button
+                    type="button"
+                    onClick={() => deselectAllFiltered(filteredQuestions)}
+                    className="text-red-600 dark:text-red-400 font-bold hover:underline cursor-pointer"
+                  >
+                    Batalkan Semua
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Category filter badges */}
+            <div className="space-y-1">
+              <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Filter Kategori:</span>
+              <div className="flex gap-1.5 flex-wrap">
+                {categories.map((cat) => {
+                  const isFiltered = filterCategoryIds.includes(cat.id);
+                  const countInCat = questions.filter(q => q.category_id === cat.id).length;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => toggleCategoryFilter(cat.id)}
+                      className={`text-xs px-2.5 py-1 rounded-full font-semibold transition-all border cursor-pointer flex items-center gap-1 ${
+                        isFiltered
+                          ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                          : 'bg-zinc-100 border-zinc-250 text-zinc-700 dark:bg-zinc-850 dark:border-zinc-800 dark:text-zinc-300 hover:bg-zinc-200'
+                      }`}
+                    >
+                      <span>{cat.name}</span>
+                      <span className={`text-[10px] px-1 rounded-full ${isFiltered ? 'bg-blue-700 text-blue-100' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-550 dark:text-zinc-400'}`}>
+                        {countInCat}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             <div className="space-y-2.5 max-h-[220px] overflow-y-auto border border-zinc-250 dark:border-zinc-800 rounded-xl p-3.5 bg-zinc-50/50 dark:bg-zinc-950/20">
-              {questions.map((q) => {
-                const isChecked = !!selectedQuestionIds[q.id];
-                return (
-                  <button
-                    key={q.id}
-                    type="button"
-                    onClick={() => toggleQuestionSelection(q.id)}
-                    className="w-full text-left flex items-start gap-3 p-2.5 rounded-lg hover:bg-zinc-100/70 dark:hover:bg-zinc-800/40 transition-colors cursor-pointer"
-                  >
-                    {isChecked ? (
-                      <CheckSquare className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                    ) : (
-                      <Square className="h-5 w-5 text-zinc-400 mt-0.5 flex-shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 line-clamp-1">{q.content_text}</p>
-                      <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">{q.type === 'pg' ? 'Pilihan Ganda' : 'Esai'} • {q.difficulty}</span>
-                    </div>
-                  </button>
-                );
-              })}
+              {filteredQuestions.length === 0 ? (
+                <p className="text-zinc-500 dark:text-zinc-400 text-center py-6 text-sm">Tidak ada soal dalam filter kategori terpilih.</p>
+              ) : (
+                filteredQuestions.map((q) => {
+                  const isChecked = !!selectedQuestionIds[q.id];
+                  const catName = categories.find(c => c.id === q.category_id)?.name || 'Kategori';
+                  return (
+                    <button
+                      key={q.id}
+                      type="button"
+                      onClick={() => toggleQuestionSelection(q.id)}
+                      className="w-full text-left flex items-start gap-3 p-2.5 rounded-lg hover:bg-zinc-100/70 dark:hover:bg-zinc-800/40 transition-colors cursor-pointer"
+                    >
+                      {isChecked ? (
+                        <CheckSquare className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                      ) : (
+                        <Square className="h-5 w-5 text-zinc-400 mt-0.5 flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 line-clamp-1">{q.content_text}</p>
+                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+                          {catName} • {q.type === 'pg' ? 'Pilihan Ganda' : 'Esai'} • {q.difficulty}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })
+              )}
             </div>
           </div>
         </form>
