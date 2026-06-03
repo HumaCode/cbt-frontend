@@ -53,6 +53,7 @@ export default function AssessmentsPage() {
   const [randomizeOptions, setRandomizeOptions] = useState(false);
   const [passingGradeType, setPassingGradeType] = useState<'overall' | 'per_category'>('overall');
   const [certificateReleaseMode, setCertificateReleaseMode] = useState<'auto' | 'manual'>('auto');
+  const [certificateTemplate, setCertificateTemplate] = useState<string>('classic');
   
   // Selected Questions mapping
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<Record<string, boolean>>({});
@@ -112,6 +113,7 @@ export default function AssessmentsPage() {
     setPassingGrade(50.00);
     setPassingGradeType('overall');
     setCertificateReleaseMode('auto');
+    setCertificateTemplate('classic');
     setRandomizeQuestions(false);
     setRandomizeOptions(false);
     setSelectedQuestionIds({});
@@ -135,6 +137,7 @@ export default function AssessmentsPage() {
       setPassingGrade(parseFloat(String(detail.passing_grade || 50.00)));
       setPassingGradeType((detail.passing_grade_type as 'overall' | 'per_category') || 'overall');
       setCertificateReleaseMode((detail.certificate_release_mode as 'auto' | 'manual') || 'auto');
+      setCertificateTemplate((detail as any).certificate_template || 'classic');
       setRandomizeQuestions(!!detail.randomize_questions);
       setRandomizeOptions(!!detail.randomize_options);
 
@@ -184,6 +187,7 @@ export default function AssessmentsPage() {
       passing_grade: Number(passingGrade),
       passing_grade_type: passingGradeType,
       certificate_release_mode: certificateReleaseMode,
+      certificate_template: certificateTemplate,
       randomize_questions: randomizeQuestions,
       randomize_options: randomizeOptions,
       questions: finalQuestionIds,
@@ -662,6 +666,81 @@ export default function AssessmentsPage() {
                   <p className="text-xs text-zinc-500 dark:text-zinc-400">Admin merilis sertifikat secara manual dari halaman monitor</p>
                 </div>
               </label>
+            </div>
+          </div>
+
+          {/* Certificate Template Customization */}
+          <div className="flex flex-col gap-2 pt-4 border-t border-zinc-200 dark:border-zinc-800">
+            <label className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Desain Template Sertifikat</label>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 -mt-1">
+              Pilih desain template sertifikat yang akan diterbitkan untuk peserta yang lulus KKM.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-1">
+              {/* Classic */}
+              <button
+                type="button"
+                onClick={() => setCertificateTemplate('classic')}
+                className={`flex flex-col text-left border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] duration-250 ${
+                  certificateTemplate === 'classic'
+                    ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-950/20 ring-1 ring-blue-500/20'
+                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950/10'
+                }`}
+              >
+                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Formal & Klasik (Classic)</span>
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                  Desain konvensional dengan bingkai emas-biru, ornamen garis tepi ganda, cocok untuk sertifikasi formal.
+                </span>
+                <div className="mt-3.5 h-16 w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-amber-50/25 flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute inset-1 border border-amber-500/40 border-dashed rounded-md pointer-events-none" />
+                  <div className="absolute top-1 text-[8px] font-extrabold text-blue-900/60 tracking-wider">CERTIFICATE</div>
+                  <div className="w-10 h-0.5 bg-amber-500/50 my-1" />
+                  <div className="text-[6px] text-zinc-400">Formal Style</div>
+                </div>
+              </button>
+
+              {/* Modern */}
+              <button
+                type="button"
+                onClick={() => setCertificateTemplate('modern')}
+                className={`flex flex-col text-left border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] duration-250 ${
+                  certificateTemplate === 'modern'
+                    ? 'border-teal-500 bg-teal-50/60 dark:bg-teal-950/20 ring-1 ring-teal-500/20'
+                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950/10'
+                }`}
+              >
+                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Minimalis & Bersih (Modern)</span>
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                  Desain bersih, modern dengan aksen warna toska, font sans-serif, cocok untuk bidang tech atau sains.
+                </span>
+                <div className="mt-3.5 h-16 w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-teal-500" />
+                  <div className="absolute top-1 text-[8px] font-bold text-teal-800/80 dark:text-teal-400/80 tracking-wider">CERTIFICATE OF PASSING</div>
+                  <div className="text-[6px] text-zinc-400 mt-3">Modern Style</div>
+                </div>
+              </button>
+
+              {/* Creative */}
+              <button
+                type="button"
+                onClick={() => setCertificateTemplate('creative')}
+                className={`flex flex-col text-left border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] duration-250 ${
+                  certificateTemplate === 'creative'
+                    ? 'border-purple-500 bg-purple-50/60 dark:bg-purple-950/20 ring-1 ring-purple-500/20'
+                    : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950/10'
+                }`}
+              >
+                <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Kreatif & Dinamis (Creative)</span>
+                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
+                  Sertifikat dengan warna gradasi ungu-biru, sudut lengkung, layout kekinian untuk kelulusan umum & non-formal.
+                </span>
+                <div className="mt-3.5 h-16 w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-gradient-to-tr from-purple-500/5 to-indigo-500/5 flex items-center justify-center relative overflow-hidden">
+                  <div className="absolute -top-6 -right-6 w-12 h-12 rounded-full bg-indigo-500/10" />
+                  <div className="absolute -bottom-6 -left-6 w-12 h-12 rounded-full bg-purple-500/10" />
+                  <div className="absolute top-1.5 text-[8px] font-extrabold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-wide">CERTIFICATE</div>
+                  <div className="text-[6px] text-zinc-400 mt-3">Creative Style</div>
+                </div>
+              </button>
             </div>
           </div>
 

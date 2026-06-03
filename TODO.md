@@ -41,8 +41,8 @@ Berikut adalah daftar tugas untuk melengkapi Portal CBT menjadi sistem ujian yan
 - [x] **Manajemen Peserta & Grup via Impor Excel**
   - [x] Sediakan modul tambah/kelola peserta dan pembagian grup kelas.
   - [x] Implementasikan fitur impor data peserta massal dari file spreadsheet (`.xlsx`).
-- [ ] **Kustomisasi Desain Template Sertifikat (Certificate Builder)**
-  - [ ] Sediakan pilihan template sertifikat kelulusan bagi admin.
+- [x] **Kustomisasi Desain Template Sertifikat (Certificate Builder)**
+  - [x] Sediakan pilihan template sertifikat kelulusan bagi admin.
 - [ ] **Analisis Performa Ujian Lanjutan (Group Analytics)**
   - [ ] Buat bagan atau grafik komparasi performa rata-rata skor antar kelas/grup peserta.
 

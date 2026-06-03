@@ -231,6 +231,8 @@ export const assessmentRepository = {
     randomize_options?: boolean;
     passing_grade?: number;
     passing_grade_type?: 'overall' | 'per_category';
+    certificate_release_mode?: 'auto' | 'manual';
+    certificate_template?: string;
     questions?: string[];
   }): Promise<Assessment> {
     const response = await api.post('/assessments', data);
@@ -246,6 +248,8 @@ export const assessmentRepository = {
     randomize_options?: boolean;
     passing_grade?: number;
     passing_grade_type?: 'overall' | 'per_category';
+    certificate_release_mode?: 'auto' | 'manual';
+    certificate_template?: string;
     questions?: string[];
   }): Promise<Assessment> {
     const response = await api.put(`/assessments/${id}`, data);

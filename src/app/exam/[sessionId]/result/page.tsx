@@ -223,75 +223,195 @@ export default function ResultPage({ params }: PageProps) {
         )}
 
         {/* Certificate Rendering Box */}
-        {passed && certificate && (
-          <div className="space-y-4 print:space-y-0">
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 print:hidden flex items-center gap-2">
-              <Award className="h-5 w-5 text-emerald-500" />
-              <span>Sertifikat Digital Anda</span>
-            </h2>
+        {passed && certificate && (() => {
+          const template = certificate.assessment_session?.assessment?.certificate_template || 'classic';
+          return (
+            <div className="space-y-4 print:space-y-0">
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 print:hidden flex items-center gap-2">
+                <Award className="h-5 w-5 text-emerald-500" />
+                <span>Sertifikat Digital Anda</span>
+              </h2>
 
-            {/* Printable Frame */}
-            <div className="p-8 sm:p-12 rounded-3xl bg-white text-zinc-950 border-[12px] border-double border-zinc-200 shadow-2xl relative flex flex-col justify-between items-center min-h-[600px] print:shadow-none print:border-zinc-300 print:rounded-none">
-              
-              {/* Corner Ornaments */}
-              <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-zinc-400/30 print:border-zinc-500" />
-              <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-zinc-400/30 print:border-zinc-500" />
-              <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-zinc-400/30 print:border-zinc-500" />
-              <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-zinc-400/30 print:border-zinc-500" />
+              {/* Classic Template */}
+              {template === 'classic' && (
+                <div className="p-8 sm:p-12 rounded-3xl bg-white text-zinc-950 border-[12px] border-double border-amber-600/30 shadow-2xl relative flex flex-col justify-between items-center min-h-[600px] print:shadow-none print:border-zinc-300 print:rounded-none">
+                  {/* Corner Ornaments */}
+                  <div className="absolute top-4 left-4 w-12 h-12 border-t-4 border-l-4 border-amber-600/30 print:border-zinc-500" />
+                  <div className="absolute top-4 right-4 w-12 h-12 border-t-4 border-r-4 border-amber-600/30 print:border-zinc-500" />
+                  <div className="absolute bottom-4 left-4 w-12 h-12 border-b-4 border-l-4 border-amber-600/30 print:border-zinc-500" />
+                  <div className="absolute bottom-4 right-4 w-12 h-12 border-b-4 border-r-4 border-amber-600/30 print:border-zinc-500" />
 
-              {/* Logo / Heading */}
-              <div className="text-center space-y-2 mt-4">
-                <div className="flex justify-center text-zinc-600 print:text-zinc-700">
-                  <Award className="h-14 w-14" />
+                  {/* Logo / Heading */}
+                  <div className="text-center space-y-2 mt-4">
+                    <div className="flex justify-center text-amber-600 print:text-zinc-700">
+                      <Award className="h-14 w-14" />
+                    </div>
+                    <h3 className="text-xs font-bold tracking-widest text-zinc-500 uppercase">Sertifikat Kelulusan</h3>
+                    <p className="text-[10px] font-mono text-zinc-400 print:text-zinc-500">No. {certificate.certificate_number}</p>
+                  </div>
+
+                  {/* Award Body */}
+                  <div className="text-center space-y-6 max-w-lg my-8">
+                    <p className="text-sm font-serif italic text-zinc-500">Dengan bangga diberikan kepada</p>
+                    
+                    <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 border-b border-zinc-200 pb-3 font-serif">
+                      {certificate.assessment_session?.user?.name || 'Peserta Ujian'}
+                    </h2>
+                    
+                    <p className="text-sm text-zinc-650 leading-relaxed">
+                      Telah dinyatakan <strong className="text-emerald-700">LULUS</strong> dalam menyelesaikan ujian online 
+                      <br />
+                      <strong className="text-zinc-900">{certificate.assessment_session?.assessment?.title}</strong>
+                      <br />
+                      dengan pencapaian nilai kelulusan yang memuaskan.
+                    </p>
+                  </div>
+
+                  {/* Seals and Dates */}
+                  <div className="w-full flex justify-between items-end border-t border-zinc-100 pt-6 mt-4">
+                    <div className="text-left space-y-1">
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Tanggal Terbit</p>
+                      <p className="text-xs font-bold text-zinc-800">
+                        {new Date(certificate.issue_date).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+
+                    {/* Digital Seal */}
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-amber-600/20 text-amber-600 text-[10px] font-bold tracking-tighter uppercase p-2 text-center rotate-12 bg-white/40">
+                      Verified CBT Secure
+                    </div>
+
+                    <div className="text-right space-y-1">
+                      <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Otoritas Penerbit</p>
+                      <p className="text-xs font-bold text-zinc-800">Sistem CBT Portal</p>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-xs font-bold tracking-widest text-zinc-500 uppercase">Sertifikat Kelulusan</h3>
-                <p className="text-[10px] font-mono text-zinc-400 print:text-zinc-500">No. {certificate.certificate_number}</p>
-              </div>
+              )}
 
-              {/* Award Body */}
-              <div className="text-center space-y-6 max-w-lg my-8">
-                <p className="text-sm font-serif italic text-zinc-500">Dengan bangga diberikan kepada</p>
-                
-                <h2 className="text-3xl font-extrabold tracking-tight text-zinc-900 border-b border-zinc-200 pb-3 font-serif">
-                  {certificate.assessment_session?.user?.name || 'Peserta Ujian'}
-                </h2>
-                
-                <p className="text-sm text-zinc-600 leading-relaxed">
-                  Telah dinyatakan <strong className="text-emerald-700">LULUS</strong> dalam menyelesaikan ujian online 
-                  <br />
-                  <strong className="text-zinc-900">{certificate.assessment_session?.assessment?.title}</strong>
-                  <br />
-                  dengan pencapaian nilai kelulusan yang memuaskan.
-                </p>
-              </div>
+              {/* Modern Template */}
+              {template === 'modern' && (
+                <div className="p-8 sm:p-12 rounded-3xl bg-zinc-50 text-zinc-950 border-[12px] border-teal-650/20 shadow-2xl relative flex flex-col justify-between items-center min-h-[600px] print:shadow-none print:border-zinc-300 print:rounded-none">
+                  {/* Left Teal Stripe */}
+                  <div className="absolute left-0 top-0 bottom-0 w-3 bg-teal-500 print:hidden" />
 
-              {/* Seals and Dates */}
-              <div className="w-full flex justify-between items-end border-t border-zinc-100 pt-6 mt-4">
-                <div className="text-left space-y-1">
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Tanggal Terbit</p>
-                  <p className="text-xs font-bold text-zinc-800">
-                    {new Date(certificate.issue_date).toLocaleDateString('id-ID', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    })}
-                  </p>
+                  {/* Logo / Heading */}
+                  <div className="text-center space-y-2 mt-4">
+                    <div className="flex justify-center text-teal-600">
+                      <Award className="h-14 w-14" />
+                    </div>
+                    <h3 className="text-xs font-extrabold tracking-widest text-teal-800 uppercase">Certificate of Passing</h3>
+                    <p className="text-[10px] font-mono text-zinc-400">No. {certificate.certificate_number}</p>
+                  </div>
+
+                  {/* Award Body */}
+                  <div className="text-center space-y-6 max-w-lg my-8">
+                    <p className="text-xs font-semibold tracking-wide text-zinc-450 uppercase">This certificate is proudly presented to</p>
+                    
+                    <h2 className="text-3xl font-black tracking-tight text-zinc-900 border-b-2 border-teal-500/30 pb-3 font-sans">
+                      {certificate.assessment_session?.user?.name || 'Peserta Ujian'}
+                    </h2>
+                    
+                    <p className="text-sm text-zinc-650 leading-relaxed">
+                      who has successfully <strong className="text-teal-700">PASSED</strong> the online assessment for
+                      <br />
+                      <strong className="text-zinc-900 text-base">{certificate.assessment_session?.assessment?.title}</strong>
+                      <br />
+                      meeting all the required criteria and standards.
+                    </p>
+                  </div>
+
+                  {/* Seals and Dates */}
+                  <div className="w-full flex justify-between items-end border-t border-zinc-200/80 pt-6 mt-4">
+                    <div className="text-left space-y-1">
+                      <p className="text-[10px] text-zinc-450 uppercase tracking-wider font-bold">Date of Issue</p>
+                      <p className="text-xs font-bold text-zinc-800">
+                        {new Date(certificate.issue_date).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+
+                    {/* Modern Seal */}
+                    <div className="flex h-14 w-28 items-center justify-center border-2 border-teal-650/30 text-teal-700 text-[9px] font-extrabold tracking-wider uppercase px-2 text-center rounded-lg bg-teal-500/5">
+                      CBT VERIFIED
+                    </div>
+
+                    <div className="text-right space-y-1">
+                      <p className="text-[10px] text-zinc-450 uppercase tracking-wider font-bold">Issuer Authority</p>
+                      <p className="text-xs font-bold text-zinc-800">Sistem CBT Portal</p>
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                {/* Digital Seal */}
-                <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-emerald-600/20 text-emerald-600 text-[10px] font-bold tracking-tighter uppercase p-2 text-center rotate-12">
-                  Verified CBT Secure
+              {/* Creative Template */}
+              {template === 'creative' && (
+                <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-purple-500/5 to-indigo-500/5 text-zinc-950 border-[12px] border-purple-500/20 shadow-2xl relative flex flex-col justify-between items-center min-h-[600px] print:shadow-none print:border-zinc-300 print:rounded-none overflow-hidden">
+                  {/* Background Blobs */}
+                  <div className="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-indigo-500/10 blur-xl print:hidden" />
+                  <div className="absolute -bottom-12 -left-12 w-28 h-28 rounded-full bg-purple-500/10 blur-xl print:hidden" />
+
+                  {/* Logo / Heading */}
+                  <div className="text-center space-y-2 mt-4 z-10">
+                    <div className="flex justify-center text-purple-600">
+                      <Award className="h-14 w-14" />
+                    </div>
+                    <h3 className="text-xs font-extrabold tracking-widest bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent uppercase">Sertifikat Kelulusan</h3>
+                    <p className="text-[10px] font-mono text-zinc-450">No. {certificate.certificate_number}</p>
+                  </div>
+
+                  {/* Award Body */}
+                  <div className="text-center space-y-6 max-w-lg my-8 z-10">
+                    <p className="text-sm italic font-serif text-purple-650/80">Dengan bangga mempersembahkan penghargaan kepada</p>
+                    
+                    <h2 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-700 to-indigo-700 bg-clip-text text-transparent pb-3 font-serif">
+                      {certificate.assessment_session?.user?.name || 'Peserta Ujian'}
+                    </h2>
+                    
+                    <p className="text-sm text-zinc-650 leading-relaxed">
+                      atas kelulusan gemilang pada evaluasi kompetensi online
+                      <br />
+                      <strong className="text-zinc-900 text-base">{certificate.assessment_session?.assessment?.title}</strong>
+                      <br />
+                      sebagai bukti penguasaan materi yang sangat baik.
+                    </p>
+                  </div>
+
+                  {/* Seals and Dates */}
+                  <div className="w-full flex justify-between items-end border-t border-purple-100 pt-6 mt-4 z-10">
+                    <div className="text-left space-y-1">
+                      <p className="text-[10px] text-purple-400 uppercase tracking-wider font-bold">Terbit Pada</p>
+                      <p className="text-xs font-bold text-zinc-800">
+                        {new Date(certificate.issue_date).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+
+                    {/* Digital Seal */}
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-indigo-600/20 text-indigo-600 text-[10px] font-bold tracking-tighter uppercase p-2 text-center rotate-6 bg-white dark:bg-zinc-900 shadow-sm">
+                      SECURE CBT
+                    </div>
+
+                    <div className="text-right space-y-1">
+                      <p className="text-[10px] text-purple-400 uppercase tracking-wider font-bold">Pihak Berwenang</p>
+                      <p className="text-xs font-bold text-zinc-800">Sistem CBT Portal</p>
+                    </div>
+                  </div>
                 </div>
-
-                <div className="text-right space-y-1">
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Otoritas Penerbit</p>
-                  <p className="text-xs font-bold text-zinc-800">Sistem CBT Portal</p>
-                </div>
-              </div>
-
+              )}
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Failed Action Card - Hidden on Print */}
         {!passed && (
