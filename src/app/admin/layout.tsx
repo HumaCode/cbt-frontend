@@ -7,6 +7,7 @@ import { User } from '@/core/types';
 import { useToastStore } from '@/presentation/components/Toast';
 import { Button } from '@/presentation/components/Button';
 import { ThemeToggle } from '@/presentation/components/ThemeToggle';
+import { Spinner } from '@/presentation/components/Spinner';
 import { 
   GraduationCap, 
   LayoutDashboard, 
@@ -68,10 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Memverifikasi Hak Akses Admin...</p>
-        </div>
+        <Spinner label="Memverifikasi Hak Akses Admin..." />
       </div>
     );
   }

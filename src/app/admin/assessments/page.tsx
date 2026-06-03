@@ -9,6 +9,7 @@ import { Modal } from '@/presentation/components/Modal';
 import { Input } from '@/presentation/components/Input';
 import { useToastStore } from '@/presentation/components/Toast';
 import { Plus, Edit2, Trash2, BookOpen, Clock, Award, Calendar, CheckSquare, Square } from 'lucide-react';
+import { Spinner } from '@/presentation/components/Spinner';
 
 export default function AssessmentsPage() {
   const addToast = useToastStore((state) => state.addToast);
@@ -231,10 +232,7 @@ export default function AssessmentsPage() {
 
       {loading ? (
         <div className="flex h-[40vh] items-center justify-center">
-          <div className="flex flex-col items-center gap-3">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-            <p className="text-sm text-zinc-500 font-medium">Memuat Jadwal Ujian...</p>
-          </div>
+          <Spinner label="Memuat Jadwal Ujian..." />
         </div>
       ) : assessments.length === 0 ? (
         <Card className="flex flex-col items-center justify-center p-12 text-center border-dashed bg-white dark:bg-zinc-900/10">
@@ -279,7 +277,7 @@ export default function AssessmentsPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => handleOpenEdit(exam)}
-                  className="flex items-center gap-1.5 text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/20"
+                  className="flex items-center gap-1.5 text-blue-600 border-zinc-200 dark:border-zinc-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
                 >
                   <Edit2 className="h-4 w-4" />
                   <span>Edit</span>
@@ -291,7 +289,7 @@ export default function AssessmentsPage() {
                     setSelectedAssessment(exam);
                     setIsDeleting(true);
                   }}
-                  className="flex items-center gap-1.5 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/20"
+                  className="flex items-center gap-1.5 text-red-600 border-zinc-200 dark:border-zinc-800 hover:text-red-700 hover:border-red-300 hover:bg-red-50/50 dark:hover:text-red-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
                 >
                   <Trash2 className="h-4 w-4" />
                   <span>Hapus</span>
