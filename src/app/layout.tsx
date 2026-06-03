@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/presentation/components/Toast";
 
+import { BackgroundParticles } from "@/presentation/components/BackgroundParticles";
+
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -39,8 +41,11 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col font-sans bg-zinc-50 text-zinc-955 dark:bg-zinc-950 dark:text-zinc-50">
-        {children}
+      <body className="relative min-h-full flex flex-col font-sans bg-zinc-50 text-zinc-955 dark:bg-zinc-950 dark:text-zinc-50 overflow-x-hidden">
+        <BackgroundParticles />
+        <div className="relative z-10 flex-1 flex flex-col min-h-full">
+          {children}
+        </div>
         <ToastContainer />
       </body>
     </html>

@@ -22,7 +22,7 @@ export function Spinner({ label }: SpinnerProps) {
       </div>
       
       {label && (
-        <p className="text-sm font-semibold tracking-wide text-zinc-550 dark:text-zinc-400 animate-pulse [animation-duration:2s]">
+        <p className="text-sm font-semibold tracking-wide text-zinc-600 dark:text-zinc-400 animate-pulse [animation-duration:2s]">
           {label}
         </p>
       )}

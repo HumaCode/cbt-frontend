@@ -15,14 +15,14 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-98 cursor-pointer';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98] active:translate-y-0 cursor-pointer hover:-translate-y-0.5';
   
   const variants = {
-    primary: 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 shadow-md shadow-blue-500/10 focus:ring-blue-500',
-    secondary: 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700 focus:ring-zinc-500',
-    outline: 'border border-zinc-300 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900 focus:ring-zinc-500',
-    danger: 'bg-red-600 text-white hover:bg-red-700 shadow-md shadow-red-500/10 focus:ring-red-500',
-    success: 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md shadow-emerald-500/10 focus:ring-emerald-500',
+    primary: 'bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white hover:from-blue-500 hover:via-indigo-500 hover:to-violet-500 shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-indigo-500/25 focus:ring-blue-500',
+    secondary: 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-850 dark:text-zinc-100 dark:hover:bg-zinc-800 shadow-sm focus:ring-zinc-500',
+    outline: 'border border-zinc-200/80 dark:border-zinc-800 bg-white/40 dark:bg-zinc-900/40 backdrop-blur-sm text-zinc-700 dark:text-zinc-300 hover:border-blue-400/50 hover:text-blue-600 dark:hover:border-blue-500/50 dark:hover:text-blue-400 hover:bg-blue-50/20 dark:hover:bg-blue-950/10 shadow-sm focus:ring-blue-500',
+    danger: 'bg-gradient-to-r from-red-600 to-rose-600 text-white hover:from-red-500 hover:to-rose-500 shadow-md shadow-red-500/15 hover:shadow-lg hover:shadow-red-500/25 focus:ring-red-500',
+    success: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-md shadow-emerald-500/15 hover:shadow-lg hover:shadow-emerald-500/25 focus:ring-emerald-500',
   };
 
   const sizes = {
