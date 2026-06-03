@@ -258,48 +258,75 @@ export default function DashboardPage() {
               )}
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {assessments.map((assessment) => {
                 const status = getExamStatus(assessment.start_date, assessment.end_date);
                 return (
-                  <Card key={assessment.id} hoverable={status.isActive} className={`flex flex-col justify-between h-full bg-white dark:bg-zinc-900/30 ${!status.isActive ? 'opacity-70' : ''}`}>
+                  <Card 
+                    key={assessment.id} 
+                    hoverable={status.isActive} 
+                    className={`flex flex-col justify-between h-full bg-white dark:bg-zinc-900/30 transition-all duration-300 transform border border-zinc-200/80 dark:border-zinc-800/80 ${
+                      status.isActive 
+                        ? 'hover:scale-[1.03] hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/5 hover:border-blue-300 dark:hover:border-blue-900/50' 
+                        : 'opacity-70'
+                    }`}
+                  >
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${status.badgeClass}`}>
                           {status.badgeText}
                         </span>
-                        <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 line-clamp-2">
+                        <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 line-clamp-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                           {assessment.title}
                         </h3>
                       </div>
 
-                      <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                      <div className="space-y-2.5 text-sm text-zinc-650 dark:text-zinc-400">
                         <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-zinc-400" />
-                          <span>Durasi: {assessment.duration_minutes} Menit</span>
+                          <Clock className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                          <span className="font-medium text-zinc-700 dark:text-zinc-300">Durasi: <strong className="text-zinc-900 dark:text-zinc-100">{assessment.duration_minutes} Menit</strong></span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Award className="h-4 w-4 text-zinc-400" />
-                          <span>Kriteria Kelulusan: KKM {assessment.passing_grade}</span>
+                          <Award className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                          <span className="font-medium text-zinc-700 dark:text-zinc-300">Passing Grade: <strong className="text-zinc-900 dark:text-zinc-100">KKM {assessment.passing_grade}</strong></span>
                         </div>
                         <div className="flex items-start gap-2">
-                          <Calendar className="h-4 w-4 text-zinc-400 mt-0.5" />
-                          <div className="flex flex-col">
-                            <span>Mulai: {new Date(assessment.start_date).toLocaleString('id-ID')}</span>
-                            <span>Selesai: {new Date(assessment.end_date).toLocaleString('id-ID')}</span>
+                          <Calendar className="h-4 w-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                          <div className="flex flex-col text-xs space-y-0.5 font-medium">
+                            <span className="text-zinc-600 dark:text-zinc-400">Mulai: <strong className="text-zinc-900 dark:text-zinc-200">{new Date(assessment.start_date).toLocaleString('id-ID')}</strong></span>
+                            <span className="text-zinc-600 dark:text-zinc-400">Selesai: <strong className="text-zinc-900 dark:text-zinc-200">{new Date(assessment.end_date).toLocaleString('id-ID')}</strong></span>
                           </div>
                         </div>
+
+                        {/* Allowed groups badges inside candidate view */}
+                        {assessment.groups && assessment.groups.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 items-center pt-2.5 border-t border-dashed border-zinc-100 dark:border-zinc-800/80">
+                            <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Kelas:</span>
+                            {assessment.groups.map((group) => (
+                              <span
+                                key={group.id}
+                                className="inline-flex px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-blue-50 text-blue-700 border border-blue-100/50 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/30"
+                              >
+                                {group.name}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/50">
+                    <div className="mt-6 pt-4 border-t border-zinc-155 dark:border-zinc-850 bg-transparent">
                       <Button
                         onClick={() => handleOpenStartModal(assessment)}
-                        className="w-full justify-center group"
+                        className={`w-full justify-center group py-2.5 font-bold transition-all duration-300 rounded-xl cursor-pointer ${
+                          status.isActive 
+                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/10 hover:shadow-lg hover:shadow-blue-500/20' 
+                            : 'bg-zinc-100 text-zinc-400 border border-zinc-200/50 dark:bg-zinc-800/50 dark:text-zinc-500 dark:border-zinc-850'
+                        }`}
                         disabled={!status.isActive}
                       >
                         <span>{status.buttonText}</span>
-                        {status.isActive && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
+                        {status.isActive && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 ml-1" />}
                       </Button>
                     </div>
                   </Card>
