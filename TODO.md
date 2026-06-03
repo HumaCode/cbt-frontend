@@ -27,7 +27,7 @@ Berikut adalah daftar tugas untuk melengkapi Portal CBT menjadi sistem ujian yan
 ---
 
 ## 🟢 Prioritas Rendah (Pelengkap Fitur)
-- [ ] **Manajemen Rilis Sertifikat Kelulusan**
-  - [ ] Tambahkan toggle opsi rilis sertifikat: "Otomatis Rilis setelah Ujian Selesai" atau "Rilis Manual oleh Admin".
-- [ ] **Dasbor Statistik Kualitas Soal (Item Analysis)**
-  - [ ] Buat grafik statistik soal tersulit dan termudah berdasarkan presentasi keberhasilan jawaban seluruh peserta.
+- [x] **Manajemen Rilis Sertifikat Kelulusan**
+  - [x] Tambahkan toggle opsi rilis sertifikat: "Otomatis Rilis setelah Ujian Selesai" atau "Rilis Manual oleh Admin".
+- [x] **Dasbor Statistik Kualitas Soal (Item Analysis)**
+  - [x] Buat grafik statistik soal tersulit dan termudah berdasarkan presentasi keberhasilan jawaban seluruh peserta.

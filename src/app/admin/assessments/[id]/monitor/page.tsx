@@ -22,14 +22,13 @@ import {
   AlertTriangle,
   PlayCircle,
   HelpCircle,
-  ChevronLeft,
-  ChevronRight,
   Share2,
   Trash2,
   Lock,
   Unlock,
   Download
 } from 'lucide-react';
+import { Pagination } from '@/presentation/components/Pagination';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -67,6 +66,12 @@ export default function MonitorPage({ params }: PageProps) {
 
   // Export states
   const [isExporting, setIsExporting] = useState(false);
+
+  // Item analysis states
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+  const [analysisData, setAnalysisData] = useState<any[]>([]);
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [analysisFilter, setAnalysisFilter] = useState<'all' | 'hard' | 'easy'>('all');
 
   // Load page from URL query string on mount
   useEffect(() => {
@@ -336,6 +341,25 @@ export default function MonitorPage({ params }: PageProps) {
     }
   };
 
+  const handleToggleCertificate = async (sessionId: string, userName: string) => {
+    try {
+      const res = await assessmentRepository.toggleCertificateRelease(sessionId);
+      addToast({
+        type: 'success',
+        title: 'Rilis Sertifikat Diperbarui',
+        message: `Sertifikat untuk ${userName} berhasil ${res.is_certificate_released ? 'dirilis' : 'dibatalkan rilisnya'}.`,
+      });
+      fetchData(false);
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Mengubah Rilis Sertifikat',
+        message: err.response?.data?.message || 'Terjadi kesalahan saat memperbarui status rilis sertifikat.',
+      });
+    }
+  };
+
   const handleViewViolationLogs = async (sessionId: string, userName: string) => {
     setTargetViolationParticipantName(userName);
     setIsViolationLogsOpen(true);
@@ -386,6 +410,38 @@ export default function MonitorPage({ params }: PageProps) {
       setIsExporting(false);
     }
   };
+
+  const handleOpenAnalysis = async () => {
+    setIsAnalysisOpen(true);
+    setLoadingAnalysis(true);
+    try {
+      const data = await assessmentRepository.getItemAnalysis(id);
+      setAnalysisData(data || []);
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Memuat Analisis Soal',
+        message: err.response?.data?.message || 'Tidak dapat memuat data analisis kualitas soal.',
+      });
+    } finally {
+      setLoadingAnalysis(false);
+    }
+  };
+
+  const validData = analysisData.filter(d => d.success_rate !== null);
+  const hardestQuestion = validData.length > 0 ? [...validData].sort((a, b) => (a.success_rate || 0) - (b.success_rate || 0))[0] : null;
+  const easiestQuestion = validData.length > 0 ? [...validData].sort((a, b) => (b.success_rate || 0) - (a.success_rate || 0))[0] : null;
+
+  const displayedAnalysis = analysisData.filter(item => {
+    if (analysisFilter === 'hard') {
+      return item.success_rate !== null && item.success_rate < 50;
+    }
+    if (analysisFilter === 'easy') {
+      return item.success_rate !== null && item.success_rate >= 50;
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6 animate-fade-in pb-12">
@@ -463,6 +519,16 @@ export default function MonitorPage({ params }: PageProps) {
             >
               <Download className="h-3.5 w-3.5" />
               <span>Ekspor CSV</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleOpenAnalysis}
+              className="flex items-center gap-1.5 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 font-bold text-xs py-1.5 px-3 rounded-lg hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-500/30 hover:bg-indigo-50/15 cursor-pointer"
+            >
+              <Activity className="h-3.5 w-3.5" />
+              <span>Analisis Soal</span>
             </Button>
           </div>
         </div>
@@ -706,6 +772,19 @@ export default function MonitorPage({ params }: PageProps) {
                       {/* Actions */}
                       <td className="py-4 px-4 text-center">
                         <div className="flex items-center justify-center gap-1">
+                          {isFinished && isPassed && (
+                            <button
+                              onClick={() => handleToggleCertificate(session.id, session.user?.name || 'Peserta')}
+                              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
+                                session.is_certificate_released
+                                  ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/20 hover:text-emerald-700'
+                                  : 'text-zinc-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/20'
+                              }`}
+                              title={session.is_certificate_released ? "Sertifikat Dirilis (Klik untuk Membatalkan)" : "Rilis Sertifikat"}
+                            >
+                              <Award className="h-4 w-4" />
+                            </button>
+                          )}
                           {isFinished && (
                             <button
                               onClick={() => handleUnlockSession(session.id, session.user?.name || 'Peserta')}
@@ -742,54 +821,15 @@ export default function MonitorPage({ params }: PageProps) {
         </div>
 
         {/* Pagination Bar */}
-        {totalItems > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/10 text-xs">
-            <span className="text-zinc-500 dark:text-zinc-400 font-medium">
-              Menampilkan <strong className="text-zinc-800 dark:text-zinc-200">{startIndex + 1}</strong> -{' '}
-              <strong className="text-zinc-800 dark:text-zinc-200">{Math.min(endIndex, totalItems)}</strong> dari{' '}
-              <strong className="text-zinc-800 dark:text-zinc-200">{totalItems}</strong> peserta
-            </span>
-            
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => handlePageChange(activePage - 1)}
-                disabled={activePage === 1}
-                className="p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer font-bold transition-all"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              
-              {Array.from({ length: totalPages }).map((_, pageIdx) => {
-                const pageNum = pageIdx + 1;
-                const isPageActive = pageNum === activePage;
-                return (
-                  <button
-                    key={pageNum}
-                    type="button"
-                    onClick={() => handlePageChange(pageNum)}
-                    className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                      isPageActive
-                        ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                        : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-650 dark:text-zinc-350'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-              
-              <button
-                type="button"
-                onClick={() => handlePageChange(activePage + 1)}
-                disabled={activePage === totalPages}
-                className="p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer font-bold transition-all"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          currentPage={activePage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          itemTypeLabel="peserta"
+          onPageChange={handlePageChange}
+        />
       </Card>
 
       {/* Custom Delete Confirmation Modal */}
@@ -899,6 +939,189 @@ export default function MonitorPage({ params }: PageProps) {
               className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 cursor-pointer font-bold py-1.5 px-4 rounded-lg text-xs"
             >
               Tutup
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Item Analysis Dashboard Modal */}
+      <Modal
+        isOpen={isAnalysisOpen}
+        onClose={() => setIsAnalysisOpen(false)}
+        title="Dasbor Kualitas Soal (Item Analysis)"
+        size="lg"
+      >
+        <div className="space-y-6">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+            Analisis tingkat kesulitan soal secara real-time berdasarkan persentase jawaban benar dari seluruh peserta yang telah mengumpulkan ujian.
+          </p>
+
+          {loadingAnalysis ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-2">
+              <RefreshCw className="h-6 w-6 animate-spin text-indigo-600" />
+              <span className="text-xs text-zinc-500 font-bold">Menghitung statistik soal...</span>
+            </div>
+          ) : analysisData.length === 0 ? (
+            <div className="text-center py-12 text-zinc-400 text-xs font-semibold">
+              Belum ada data pengerjaan peserta untuk memulai analisis kualitas soal.
+            </div>
+          ) : (
+            <>
+              {/* Summary Stats Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-850 bg-zinc-50/50 dark:bg-zinc-900/10">
+                  <span className="text-[10px] uppercase font-bold text-zinc-400 tracking-wider">Total Soal</span>
+                  <div className="text-xl font-black text-zinc-800 dark:text-zinc-200 mt-1">{analysisData.length} Soal</div>
+                </div>
+                
+                <div className="p-3.5 rounded-xl border border-red-500/10 bg-red-500/5 text-left">
+                  <span className="text-[10px] uppercase font-bold text-red-500/80 tracking-wider">Soal Tersulit</span>
+                  {hardestQuestion ? (
+                    <div className="mt-1">
+                      <div className="text-xl font-black text-red-650 dark:text-red-400">{hardestQuestion.success_rate !== null ? `${hardestQuestion.success_rate}%` : '0%'}</div>
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold truncate mt-0.5" title={hardestQuestion.content_text.replace(/<[^>]*>/g, '')}>
+                        {hardestQuestion.content_text.replace(/<[^>]*>/g, '')}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm font-bold text-zinc-450 mt-1">-</div>
+                  )}
+                </div>
+
+                <div className="p-3.5 rounded-xl border border-emerald-500/10 bg-emerald-500/5 text-left">
+                  <span className="text-[10px] uppercase font-bold text-emerald-500/80 tracking-wider">Soal Termudah</span>
+                  {easiestQuestion ? (
+                    <div className="mt-1">
+                      <div className="text-xl font-black text-emerald-650 dark:text-emerald-400">{easiestQuestion.success_rate !== null ? `${easiestQuestion.success_rate}%` : '0%'}</div>
+                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400 font-semibold truncate mt-0.5" title={easiestQuestion.content_text.replace(/<[^>]*>/g, '')}>
+                        {easiestQuestion.content_text.replace(/<[^>]*>/g, '')}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-sm font-bold text-zinc-450 mt-1">-</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Filter Tabs */}
+              <div className="flex border-b border-zinc-200 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setAnalysisFilter('all')}
+                  className={`py-2 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                    analysisFilter === 'all'
+                      ? 'border-indigo-600 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-zinc-500 hover:text-zinc-700'
+                  }`}
+                >
+                  Semua Soal ({analysisData.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAnalysisFilter('hard')}
+                  className={`py-2 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                    analysisFilter === 'hard'
+                      ? 'border-red-500 text-red-500'
+                      : 'border-transparent text-zinc-500 hover:text-zinc-700'
+                  }`}
+                >
+                  Tersulit ({analysisData.filter(d => d.success_rate !== null && d.success_rate < 50).length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAnalysisFilter('easy')}
+                  className={`py-2 px-4 text-xs font-bold transition-all border-b-2 cursor-pointer ${
+                    analysisFilter === 'easy'
+                      ? 'border-emerald-500 text-emerald-500'
+                      : 'border-transparent text-zinc-500 hover:text-zinc-700'
+                  }`}
+                >
+                  Termudah ({analysisData.filter(d => d.success_rate !== null && d.success_rate >= 50).length})
+                </button>
+              </div>
+
+              {/* Questions List */}
+              <div className="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                {displayedAnalysis.length === 0 ? (
+                  <div className="text-center py-8 text-zinc-400 text-xs font-medium">
+                    Tidak ada soal dalam kategori filter ini.
+                  </div>
+                ) : (
+                  displayedAnalysis.map((item, idx) => {
+                    const isHard = item.success_rate !== null && item.success_rate < 50;
+                    const successPct = item.success_rate !== null ? item.success_rate : 0;
+                    
+                    return (
+                      <div 
+                        key={item.id}
+                        className="p-3 border border-zinc-150 dark:border-zinc-800 rounded-xl bg-zinc-50/20 dark:bg-zinc-950 flex flex-col gap-2 hover:shadow-sm transition-all"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[10px] font-bold text-zinc-400">#{idx + 1}</span>
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase bg-zinc-100 dark:bg-zinc-800 text-zinc-650 dark:text-zinc-400">
+                                {item.category_name}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
+                                item.difficulty === 'hard'
+                                  ? 'bg-rose-500/10 text-rose-600 dark:text-rose-455'
+                                  : item.difficulty === 'medium'
+                                  ? 'bg-amber-500/10 text-amber-600 dark:text-amber-500'
+                                  : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                              }`}>
+                                {item.difficulty}
+                              </span>
+                            </div>
+                            <p 
+                              className="text-xs text-zinc-800 dark:text-zinc-200 font-semibold line-clamp-2"
+                              dangerouslySetInnerHTML={{ __html: item.content_text }}
+                            />
+                          </div>
+                          
+                          {/* Success rate percentage badge */}
+                          <div className="text-right whitespace-nowrap">
+                            <span className={`text-sm font-black ${
+                              isHard ? 'text-rose-650 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+                            }`}>
+                              {item.success_rate !== null ? `${item.success_rate}%` : 'N/A'}
+                            </span>
+                            <p className="text-[9px] text-zinc-400 font-semibold">Keberhasilan</p>
+                          </div>
+                        </div>
+
+                        {/* Custom CSS Progress Bar Chart */}
+                        <div className="space-y-1">
+                          <div className="w-full h-2 rounded-full bg-zinc-150 dark:bg-zinc-800 overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                isHard 
+                                  ? 'bg-gradient-to-r from-rose-500 to-amber-500' 
+                                  : 'bg-gradient-to-r from-emerald-500 to-indigo-500'
+                              }`}
+                              style={{ width: `${successPct}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-[10px] text-zinc-400 font-semibold">
+                            <span>{item.correct_count} Jawaban Benar</span>
+                            <span>{item.total_attempts} Percobaan</span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </>
+          )}
+
+          <div className="flex justify-end pt-2 border-t border-zinc-200 dark:border-zinc-850">
+            <Button
+              type="button"
+              onClick={() => setIsAnalysisOpen(false)}
+              className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 font-bold py-2 px-5 rounded-xl text-xs cursor-pointer"
+            >
+              Tutup Dashboard
             </Button>
           </div>
         </div>

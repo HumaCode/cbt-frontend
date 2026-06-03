@@ -52,6 +52,7 @@ export default function AssessmentsPage() {
   const [randomizeQuestions, setRandomizeQuestions] = useState(false);
   const [randomizeOptions, setRandomizeOptions] = useState(false);
   const [passingGradeType, setPassingGradeType] = useState<'overall' | 'per_category'>('overall');
+  const [certificateReleaseMode, setCertificateReleaseMode] = useState<'auto' | 'manual'>('auto');
   
   // Selected Questions mapping
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<Record<string, boolean>>({});
@@ -110,6 +111,7 @@ export default function AssessmentsPage() {
     setMaxAttempts(1);
     setPassingGrade(50.00);
     setPassingGradeType('overall');
+    setCertificateReleaseMode('auto');
     setRandomizeQuestions(false);
     setRandomizeOptions(false);
     setSelectedQuestionIds({});
@@ -132,6 +134,7 @@ export default function AssessmentsPage() {
       setMaxAttempts(detail.max_attempts || 1);
       setPassingGrade(parseFloat(String(detail.passing_grade || 50.00)));
       setPassingGradeType((detail.passing_grade_type as 'overall' | 'per_category') || 'overall');
+      setCertificateReleaseMode((detail.certificate_release_mode as 'auto' | 'manual') || 'auto');
       setRandomizeQuestions(!!detail.randomize_questions);
       setRandomizeOptions(!!detail.randomize_options);
 
@@ -180,6 +183,7 @@ export default function AssessmentsPage() {
       max_attempts: Number(maxAttempts),
       passing_grade: Number(passingGrade),
       passing_grade_type: passingGradeType,
+      certificate_release_mode: certificateReleaseMode,
       randomize_questions: randomizeQuestions,
       randomize_options: randomizeOptions,
       questions: finalQuestionIds,
@@ -616,6 +620,49 @@ export default function AssessmentsPage() {
               />
               Acak Opsi Pilihan
             </label>
+          </div>
+
+          {/* Certificate Release Mode */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-zinc-200 dark:border-zinc-800">
+            <label className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Mode Rilis Sertifikat</label>
+            <div className="flex gap-3">
+              <label className={`flex-1 flex items-center gap-2.5 border rounded-xl p-3 cursor-pointer transition-all ${
+                certificateReleaseMode === 'auto'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                  : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+              }`}>
+                <input
+                  type="radio"
+                  name="certificate_release_mode"
+                  value="auto"
+                  checked={certificateReleaseMode === 'auto'}
+                  onChange={() => setCertificateReleaseMode('auto')}
+                  className="accent-blue-600"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Otomatis</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Rilis otomatis setelah ujian selesai jika lulus KKM</p>
+                </div>
+              </label>
+              <label className={`flex-1 flex items-center gap-2.5 border rounded-xl p-3 cursor-pointer transition-all ${
+                certificateReleaseMode === 'manual'
+                  ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20'
+                  : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+              }`}>
+                <input
+                  type="radio"
+                  name="certificate_release_mode"
+                  value="manual"
+                  checked={certificateReleaseMode === 'manual'}
+                  onChange={() => setCertificateReleaseMode('manual')}
+                  className="accent-amber-600"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Manual</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Admin merilis sertifikat secara manual dari halaman monitor</p>
+                </div>
+              </label>
+            </div>
           </div>
 
           {/* Group Allowed checklist */}

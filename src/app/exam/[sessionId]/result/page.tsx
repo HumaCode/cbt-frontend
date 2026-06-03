@@ -33,6 +33,7 @@ export default function ResultPage({ params }: PageProps) {
   const [certificate, setCertificate] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [passed, setPassed] = useState(false);
+  const [certReleaseMessage, setCertReleaseMessage] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -57,8 +58,12 @@ export default function ResultPage({ params }: PageProps) {
           try {
             const certData = await assessmentRepository.getCertificate(sessionId);
             setCertificate(certData);
-          } catch (certErr) {
+          } catch (certErr: any) {
             console.error('Failed to load/generate certificate', certErr);
+            const errMsg = certErr.response?.data?.message;
+            if (errMsg && errMsg.includes('belum dirilis')) {
+              setCertReleaseMessage(errMsg);
+            }
           }
         }
       } catch (err: any) {
@@ -203,6 +208,19 @@ export default function ResultPage({ params }: PageProps) {
             </div>
           </Card>
         </div>
+
+        {/* Pending Certificate Warning */}
+        {passed && !certificate && (
+          <Card className="p-8 text-center space-y-4 border border-amber-250 dark:border-amber-900 bg-amber-50/30 dark:bg-amber-950/10 print:hidden rounded-2xl shadow-md">
+            <Award className="h-10 w-10 text-amber-500 mx-auto animate-bounce" />
+            <h3 className="text-lg font-bold text-zinc-800 dark:text-zinc-200">
+              Sertifikat Belum Dirilis
+            </h3>
+            <p className="text-sm text-zinc-605 dark:text-zinc-400 max-w-md mx-auto leading-relaxed">
+              {certReleaseMessage || 'Sertifikat kelulusan Anda belum dirilis oleh administrator/pengawas ujian.'}
+            </p>
+          </Card>
+        )}
 
         {/* Certificate Rendering Box */}
         {passed && certificate && (

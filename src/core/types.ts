@@ -54,6 +54,7 @@ export interface Assessment {
   randomize_options: boolean;
   passing_grade: string | number;
   passing_grade_type?: 'overall' | 'per_category';
+  certificate_release_mode?: 'auto' | 'manual';
   questions?: Question[];
   groups?: Group[];
   sessions?: AssessmentSession[];
@@ -77,6 +78,7 @@ export interface AssessmentSession {
   end_time: string;
   status: 'in_progress' | 'completed' | 'force_submitted';
   total_score: string | number;
+  is_certificate_released?: boolean;
   assessment?: Assessment;
   answers?: SessionAnswer[];
 }

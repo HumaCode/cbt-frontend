@@ -280,4 +280,16 @@ export const assessmentRepository = {
     });
     return response.data;
   },
+  async toggleCertificateRelease(sessionId: string): Promise<any> {
+    const response = await api.post(`/sessions/${sessionId}/toggle-certificate`);
+    return response.data.data;
+  },
+  async getItemAnalysis(id: string): Promise<any[]> {
+    const response = await api.get(`/assessments/${id}/item-analysis`);
+    return response.data.data;
+  },
+  async getDashboardStats(): Promise<any> {
+    const response = await api.get('/dashboard/stats');
+    return response.data.data;
+  },
 };

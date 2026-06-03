@@ -8,8 +8,9 @@ import { Button } from '@/presentation/components/Button';
 import { Modal } from '@/presentation/components/Modal';
 import { Input } from '@/presentation/components/Input';
 import { useToastStore } from '@/presentation/components/Toast';
-import { Plus, Edit2, Trash2, FolderKanban, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, FolderKanban, Search } from 'lucide-react';
 import { Spinner } from '@/presentation/components/Spinner';
+import { Pagination } from '@/presentation/components/Pagination';
 
 export default function CategoriesPage() {
   const addToast = useToastStore((state) => state.addToast);
@@ -271,54 +272,15 @@ export default function CategoriesPage() {
               </div>
 
               {/* Pagination Bar */}
-              {totalItems > 0 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-zinc-200/60 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/10 text-xs">
-                  <span className="text-zinc-500 font-medium">
-                    Menampilkan <strong className="text-zinc-800 dark:text-zinc-200">{startIndex + 1}</strong> -{' '}
-                    <strong className="text-zinc-800 dark:text-zinc-200">{Math.min(endIndex, totalItems)}</strong> dari{' '}
-                    <strong className="text-zinc-800 dark:text-zinc-200">{totalItems}</strong> kategori
-                  </span>
-                  
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => handlePageChange(activePage - 1)}
-                      disabled={activePage === 1}
-                      className="p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer font-bold transition-all"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    
-                    {Array.from({ length: totalPages }).map((_, pageIdx) => {
-                      const pageNum = pageIdx + 1;
-                      const isPageActive = pageNum === activePage;
-                      return (
-                        <button
-                          key={pageNum}
-                          type="button"
-                          onClick={() => handlePageChange(pageNum)}
-                          className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-                            isPageActive
-                              ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                              : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-650 dark:text-zinc-350'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                    
-                    <button
-                      type="button"
-                      onClick={() => handlePageChange(activePage + 1)}
-                      disabled={activePage === totalPages}
-                      className="p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer font-bold transition-all"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                currentPage={activePage}
+                totalPages={totalPages}
+                totalItems={totalItems}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                itemTypeLabel="kategori"
+                onPageChange={handlePageChange}
+              />
             </>
           )}
         </Card>
