@@ -279,62 +279,70 @@ export default function MonitorPage({ params }: PageProps) {
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       {/* Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-zinc-200 dark:border-zinc-800/80">
+        <div className="space-y-2">
           <button
             onClick={() => router.push('/admin/assessments')}
-            className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-bold transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs font-bold transition-all cursor-pointer group"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Kembali ke Jadwal</span>
+            <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" />
+            <span>Kembali ke Jadwal Ujian</span>
           </button>
           
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h1 className="text-2xl md:text-3xl font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight leading-none">
               Pemantauan Ujian Live
             </h1>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-xs font-extrabold animate-pulse">
-              <Activity className="h-3.5 w-3.5" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-450 border border-emerald-500/20 text-[10px] font-extrabold uppercase tracking-wider animate-pulse align-middle">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
               <span>LIVE</span>
-            </div>
+            </span>
           </div>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">
-            Ujian: <strong className="text-zinc-800 dark:text-zinc-200">{assessment.title}</strong>
-          </p>
+
+          <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+            <span>Ujian:</span>
+            <span className="font-bold text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-800/60 px-2 py-0.5 rounded-md text-xs">
+              {assessment.title}
+            </span>
+          </div>
         </div>
 
         {/* Sync Controls */}
-        <div className="flex items-center gap-3 self-start md:self-center">
-          <label className="flex items-center gap-2 text-xs font-bold text-zinc-600 dark:text-zinc-400 cursor-pointer select-none">
+        <div className="flex flex-wrap items-center gap-3 bg-zinc-550/5 dark:bg-zinc-900/30 p-2 rounded-xl border border-zinc-200/60 dark:border-zinc-800/60 self-start lg:self-center">
+          <label className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/40 text-xs font-semibold text-zinc-650 dark:text-zinc-350 cursor-pointer select-none transition-all">
             <input
               type="checkbox"
               checked={autoRefresh}
               onChange={(e) => setAutoRefresh(e.target.checked)}
-              className="h-4 w-4 rounded border-zinc-300 focus:ring-blue-500 text-blue-600 cursor-pointer"
+              className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-700 focus:ring-blue-500 text-blue-600 cursor-pointer"
             />
             <span>Auto Refresh (5s)</span>
           </label>
           
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => fetchData(true)}
-            isLoading={refreshing}
-            className="flex items-center gap-1.5 border-zinc-200 dark:border-zinc-800"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-            <span>Perbarui</span>
-          </Button>
+          <div className="h-4 w-px bg-zinc-250 dark:bg-zinc-800 hidden sm:block" />
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(`/public-monitor/${id}`, '_blank')}
-            className="flex items-center gap-1.5 border-zinc-200 dark:border-zinc-800 hover:text-blue-600 dark:hover:text-blue-400"
-          >
-            <Share2 className="h-3.5 w-3.5" />
-            <span>Monitor Publik</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => fetchData(true)}
+              isLoading={refreshing}
+              className="flex items-center gap-1.5 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 font-bold hover:bg-zinc-50 text-xs py-1.5 px-3 rounded-lg cursor-pointer"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              <span>Perbarui</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.open(`/public-monitor/${id}`, '_blank')}
+              className="flex items-center gap-1.5 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 font-bold text-xs py-1.5 px-3 rounded-lg hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-500/30 hover:bg-blue-50/15 cursor-pointer"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              <span>Monitor Publik</span>
+            </Button>
+          </div>
         </div>
       </div>
 
