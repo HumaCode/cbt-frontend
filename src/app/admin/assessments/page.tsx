@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { assessmentRepository } from '@/infrastructure/repositories/assessmentRepository';
 import { Assessment, Question, Category } from '@/core/types';
 import { Card } from '@/presentation/components/Card';
@@ -9,16 +10,29 @@ import { Modal } from '@/presentation/components/Modal';
 import { Input } from '@/presentation/components/Input';
 import { DateTimePicker } from '@/presentation/components/DateTimePicker';
 import { useToastStore } from '@/presentation/components/Toast';
-import { Plus, Edit2, Trash2, BookOpen, Clock, Award, Calendar, CheckSquare, Square } from 'lucide-react';
+import { Plus, Edit2, Trash2, BookOpen, Clock, Award, Calendar, CheckSquare, Square, Activity, Share2 } from 'lucide-react';
 import { Spinner } from '@/presentation/components/Spinner';
 
 export default function AssessmentsPage() {
+  const router = useRouter();
   const addToast = useToastStore((state) => state.addToast);
 
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleSharePublicMonitor = (examId: string) => {
+    if (typeof window !== 'undefined') {
+      const publicUrl = `${window.location.origin}/public-monitor/${examId}`;
+      navigator.clipboard.writeText(publicUrl);
+      addToast({
+        type: 'success',
+        title: 'Tautan Disalin',
+        message: 'Tautan monitoring publik berhasil disalin ke papan klip.',
+      });
+    }
+  };
 
   // Modal states
   const [isOpen, setIsOpen] = useState(false);
@@ -281,59 +295,108 @@ export default function AssessmentsPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {assessments.map((exam) => (
-            <Card key={exam.id} className="flex flex-col justify-between bg-white dark:bg-zinc-900/30">
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 line-clamp-2">
-                    {exam.title}
-                  </h3>
-                </div>
+          {assessments.map((exam) => {
+            const now = new Date();
+            const start = new Date(exam.start_date);
+            const end = new Date(exam.end_date);
 
-                <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-zinc-400" />
-                    <span>Durasi: {exam.duration_minutes} Menit</span>
+            let statusBadge = null;
+            if (now < start) {
+              statusBadge = (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                  Terjadwal
+                </span>
+              );
+            } else if (now >= start && now <= end) {
+              statusBadge = (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-600 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-500/20 animate-pulse">
+                  <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                  Berlangsung
+                </span>
+              );
+            } else {
+              statusBadge = (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-zinc-200 text-zinc-500 dark:bg-zinc-800/80 dark:text-zinc-500 border border-zinc-300 dark:border-zinc-700">
+                  Selesai
+                </span>
+              );
+            }
+
+            return (
+              <Card key={exam.id} className="flex flex-col justify-between bg-white dark:bg-zinc-900/30">
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 line-clamp-2">
+                        {exam.title}
+                      </h3>
+                      <div className="shrink-0 mt-1">{statusBadge}</div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Award className="h-4 w-4 text-zinc-400" />
-                    <span>Passing Grade: KKM {parseFloat(String(exam.passing_grade || 50))}</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Calendar className="h-4 w-4 text-zinc-400 mt-0.5" />
-                    <div className="flex flex-col text-xs">
-                      <span>Mulai: {new Date(exam.start_date).toLocaleString('id-ID')}</span>
-                      <span>Selesai: {new Date(exam.end_date).toLocaleString('id-ID')}</span>
+
+                  <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-zinc-400" />
+                      <span>Durasi: {exam.duration_minutes} Menit</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Award className="h-4 w-4 text-zinc-400" />
+                      <span>Passing Grade: KKM {parseFloat(String(exam.passing_grade || 50))}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Calendar className="h-4 w-4 text-zinc-400 mt-0.5" />
+                      <div className="flex flex-col text-xs">
+                        <span>Mulai: {new Date(exam.start_date).toLocaleString('id-ID')}</span>
+                        <span>Selesai: {new Date(exam.end_date).toLocaleString('id-ID')}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleOpenEdit(exam)}
-                  className="flex items-center gap-1.5 text-blue-600 border-zinc-200 dark:border-zinc-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
-                >
-                  <Edit2 className="h-4 w-4" />
-                  <span>Edit</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSelectedAssessment(exam);
-                    setIsDeleting(true);
-                  }}
-                  className="flex items-center gap-1.5 text-red-600 border-zinc-200 dark:border-zinc-800 hover:text-red-700 hover:border-red-300 hover:bg-red-50/50 dark:hover:text-red-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>Hapus</span>
-                </Button>
-              </div>
-            </Card>
-          ))}
+                <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/60 flex items-center justify-end gap-2 flex-wrap">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleSharePublicMonitor(exam.id)}
+                    className="flex items-center gap-1.5 text-zinc-600 border-zinc-200 dark:border-zinc-800 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 dark:text-zinc-400 dark:hover:text-blue-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    <span>Bagikan</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/admin/assessments/${exam.id}/monitor`)}
+                    className="flex items-center gap-1.5 text-emerald-600 border-zinc-200 dark:border-zinc-800 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50/50 dark:hover:text-emerald-400 dark:hover:border-emerald-900/50 dark:hover:bg-emerald-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+                  >
+                    <Activity className="h-4 w-4" />
+                    <span>Monitor</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleOpenEdit(exam)}
+                    className="flex items-center gap-1.5 text-blue-600 border-zinc-200 dark:border-zinc-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                    <span>Edit</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedAssessment(exam);
+                      setIsDeleting(true);
+                    }}
+                    className="flex items-center gap-1.5 text-red-600 border-zinc-200 dark:border-zinc-800 hover:text-red-700 hover:border-red-300 hover:bg-red-50/50 dark:hover:text-red-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Hapus</span>
+                  </Button>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -482,7 +545,7 @@ export default function AssessmentsPage() {
                       }`}
                     >
                       <span>{cat.name}</span>
-                      <span className={`text-[10px] px-1 rounded-full ${isFiltered ? 'bg-blue-700 text-blue-100' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-550 dark:text-zinc-400'}`}>
+                      <span className={`text-[10px] px-1 rounded-full ${isFiltered ? 'bg-blue-700 text-blue-100' : 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400'}`}>
                         {countInCat}
                       </span>
                     </button>

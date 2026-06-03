@@ -158,7 +158,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
             <button
               type="button"
               onClick={() => handleMonthNavigate('prev')}
-              className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/80 text-zinc-550 dark:text-zinc-400 cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 cursor-pointer"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
@@ -168,7 +168,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
             <button
               type="button"
               onClick={() => handleMonthNavigate('next')}
-              className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/80 text-zinc-550 dark:text-zinc-400 cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800/80 text-zinc-500 dark:text-zinc-400 cursor-pointer"
             >
               <ChevronRight className="h-4 w-4" />
             </button>
@@ -233,7 +233,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
               <select
                 value={selectedDate.getHours()}
                 onChange={(e) => handleTimeChange(Number(e.target.value), selectedDate.getMinutes())}
-                className="px-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-150 rounded-xl font-semibold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                className="px-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 rounded-xl font-semibold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer"
               >
                 {Array.from({ length: 24 }, (_, i) => (
                   <option key={i} value={i}>
@@ -245,7 +245,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
               <select
                 value={selectedDate.getMinutes()}
                 onChange={(e) => handleTimeChange(selectedDate.getHours(), Number(e.target.value))}
-                className="px-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-150 rounded-xl font-semibold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                className="px-2 py-1.5 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-200 rounded-xl font-semibold focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer"
               >
                 {Array.from({ length: 60 }, (_, i) => (
                   <option key={i} value={i}>
@@ -255,7 +255,7 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
               </select>
             </div>
           </div>
-
+ 
           {/* Footer controls */}
           <div className="flex items-center justify-between mt-3.5 pt-3 border-t border-zinc-100 dark:border-zinc-800/80">
             <button
@@ -275,8 +275,8 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({
           </div>
         </div>
       )}
-
-      {error && <span className="text-sm text-red-650 dark:text-red-400">{error}</span>}
+ 
+      {error && <span className="text-sm text-red-600 dark:text-red-400">{error}</span>}
     </div>
   );
 };

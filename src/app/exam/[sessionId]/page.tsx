@@ -19,7 +19,8 @@ import {
   AlertTriangle, 
   Maximize2,
   Clock,
-  CheckCircle
+  CheckCircle,
+  X
 } from 'lucide-react';
 
 interface PageProps {
@@ -58,6 +59,8 @@ export default function ExamPage({ params }: PageProps) {
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [lightboxImageUrl, setLightboxImageUrl] = useState<string | null>(null);
+  const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -180,6 +183,7 @@ export default function ExamPage({ params }: PageProps) {
   });
 
   const enterFullscreenAndStart = async () => {
+    setIsStarting(true);
     try {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
@@ -209,6 +213,8 @@ export default function ExamPage({ params }: PageProps) {
         title: 'Gagal Masuk Mode Aman',
         message: 'Mohon izinkan akses layar penuh di browser Anda.',
       });
+    } finally {
+      setIsStarting(false);
     }
   };
 
@@ -338,9 +344,11 @@ export default function ExamPage({ params }: PageProps) {
           </div>
           <Button
             onClick={enterFullscreenAndStart}
+            isLoading={isStarting}
+            disabled={isStarting}
             className="w-full justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 py-3 text-base shadow-lg shadow-blue-500/10"
           >
-            Masuk Mode Aman & Mulai
+            {isStarting ? 'Sedang proses...' : 'Masuk Mode Aman & Mulai'}
           </Button>
         </Card>
       </div>
@@ -439,12 +447,17 @@ export default function ExamPage({ params }: PageProps) {
               </p>
               
               {currentQuestion.media && currentQuestion.media.length > 0 && (
-                <div className="max-w-full sm:max-w-xl rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-950 p-1">
-                  <img
-                    src={getMediaUrl(currentQuestion.media[0].original_url || currentQuestion.media[0].url)}
-                    alt="Gambar Soal"
-                    className="w-full h-auto max-h-[350px] object-contain rounded-xl mx-auto"
-                  />
+                <div className="flex flex-wrap gap-4 mt-4">
+                  {currentQuestion.media.map((med: any, mIdx: number) => (
+                    <div key={mIdx} className="max-w-xs rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-950 p-1">
+                      <img
+                        src={getMediaUrl(med.original_url || med.url)}
+                        alt={`Gambar Soal ${mIdx + 1}`}
+                        className="w-full h-auto max-h-[250px] object-contain rounded-xl mx-auto cursor-zoom-in hover:opacity-95 transition-opacity"
+                        onClick={() => setLightboxImageUrl(getMediaUrl(med.original_url || med.url))}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -478,26 +491,46 @@ export default function ExamPage({ params }: PageProps) {
                       <button
                         key={option.id}
                         onClick={() => handleSelectOption(currentQuestion.id, option.id)}
-                        className={`w-full text-left px-5 py-4 rounded-xl border flex items-center gap-4 transition-all duration-200 cursor-pointer ${
+                        className={`w-full text-left px-5 py-4 rounded-xl border flex items-start gap-4 transition-all duration-200 cursor-pointer ${
                           isSelected
                             ? 'bg-blue-50/70 border-blue-500 text-blue-900 shadow-sm dark:bg-blue-950/20 dark:border-blue-500 dark:text-blue-200 font-semibold'
                             : 'border-zinc-200 bg-white hover:bg-zinc-50/50 hover:border-zinc-350 dark:border-zinc-800/80 dark:bg-zinc-900/20 dark:hover:bg-zinc-800/30'
                         }`}
                       >
-                        <span className={`flex h-8 w-8 items-center justify-center rounded-lg font-bold text-sm ${
+                        <span className={`flex h-8 w-8 items-center justify-center rounded-lg font-bold text-sm flex-shrink-0 mt-0.5 ${
                           isSelected
                             ? 'bg-blue-600 text-white dark:bg-blue-500'
                             : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200/50 dark:border-transparent'
                         }`}>
                           {letter}
                         </span>
-                        <span className={`flex-1 font-medium ${
-                          isSelected 
-                            ? 'text-blue-900 dark:text-blue-200' 
-                            : 'text-zinc-800 dark:text-zinc-200'
-                        }`}>
-                          {option.option_text}
-                        </span>
+                        <div className="flex-1 flex flex-col gap-2">
+                          <span className={`font-medium ${
+                            isSelected 
+                              ? 'text-blue-900 dark:text-blue-200' 
+                              : 'text-zinc-800 dark:text-zinc-200'
+                          }`}>
+                            {option.option_text}
+                          </span>
+                          {(() => {
+                            const mediaItem = option.media?.[0];
+                            if (!mediaItem) return null;
+                            const mediaUrl = getMediaUrl(mediaItem.original_url || mediaItem.url);
+                            return (
+                              <div className="max-w-xs rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-1">
+                                <img
+                                  src={mediaUrl}
+                                  alt={`Pilihan Jawaban ${letter}`}
+                                  className="w-full h-auto max-h-[150px] object-contain rounded-md cursor-zoom-in hover:opacity-95 transition-opacity"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setLightboxImageUrl(mediaUrl);
+                                  }}
+                                />
+                              </div>
+                            );
+                          })()}
+                        </div>
                       </button>
                     );
                   })}
@@ -646,6 +679,31 @@ export default function ExamPage({ params }: PageProps) {
           </div>
         </div>
       </Modal>
+
+      {/* Lightbox Modal */}
+      {lightboxImageUrl && (
+        <div 
+          className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/85 backdrop-blur-sm p-4 cursor-zoom-out select-none"
+          onClick={() => setLightboxImageUrl(null)}
+        >
+          <button
+            onClick={() => setLightboxImageUrl(null)}
+            className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition-all duration-200 cursor-pointer"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <div 
+            className="relative max-w-5xl max-h-[90vh] w-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={lightboxImageUrl}
+              alt="Zoomed View"
+              className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl border border-white/10 cursor-default select-text"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

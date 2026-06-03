@@ -8,7 +8,7 @@ import { Button } from '@/presentation/components/Button';
 import { Modal } from '@/presentation/components/Modal';
 import { Input } from '@/presentation/components/Input';
 import { useToastStore } from '@/presentation/components/Toast';
-import { Plus, Edit2, Trash2, HelpCircle, Check, X, Layers, ArrowLeft, Folder } from 'lucide-react';
+import { Plus, Edit2, Trash2, HelpCircle, Check, X, Layers, ArrowLeft, Folder, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Spinner } from '@/presentation/components/Spinner';
 import { getMediaUrl } from '@/infrastructure/api';
 
@@ -26,11 +26,48 @@ export default function QuestionsPage() {
   
   // Category navigation state
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Load page from URL query string on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const page = parseInt(params.get('page') || '1', 10);
+      if (page > 0) {
+        setCurrentPage(page);
+      }
+    }
+  }, []);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('page', String(page));
+      window.history.replaceState(null, '', url.pathname + url.search);
+    }
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    handlePageChange(1); // reset to page 1 on filter
+  };
+
+  const handleCategoryChange = (catId: string | null) => {
+    setActiveCategoryId(catId);
+    handlePageChange(1);
+    setSearchQuery(''); // reset search query on folder change
+  };
 
   // File upload states
-  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
-  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null);
-  const [deleteExistingMedia, setDeleteExistingMedia] = useState(false);
+  const [questionImages, setQuestionImages] = useState<{
+    id?: string;
+    file?: File;
+    previewUrl: string;
+    isDeleted?: boolean;
+  }[]>([]);
+  const [deletedMediaIds, setDeletedMediaIds] = useState<string[]>([]);
 
   // Form states
   const [categoryId, setCategoryId] = useState('');
@@ -39,8 +76,17 @@ export default function QuestionsPage() {
   const [contentText, setContentText] = useState('');
   
   // Dynamic PG options state
-  const [options, setOptions] = useState<{ option_text: string; is_correct: boolean; weight: number }[]>([
-    { option_text: '', is_correct: false, weight: 0 },
+  const [options, setOptions] = useState<{
+    id?: string;
+    option_text: string;
+    is_correct: boolean;
+    weight: number;
+    imageFile?: File | null;
+    imagePreviewUrl?: string | null;
+    existingMediaUrl?: string | null;
+    clear_image?: boolean;
+  }[]>([
+    { option_text: '', is_correct: true, weight: 10 },
     { option_text: '', is_correct: false, weight: 0 },
   ]);
 
@@ -78,14 +124,13 @@ export default function QuestionsPage() {
     setDifficulty('easy');
     setContentText('');
     setOptions([
-      { option_text: '', is_correct: true, weight: 10 },
-      { option_text: '', is_correct: false, weight: 0 },
-      { option_text: '', is_correct: false, weight: 0 },
-      { option_text: '', is_correct: false, weight: 0 },
+      { option_text: '', is_correct: true, weight: 10, imageFile: null, imagePreviewUrl: null, existingMediaUrl: null },
+      { option_text: '', is_correct: false, weight: 0, imageFile: null, imagePreviewUrl: null, existingMediaUrl: null },
+      { option_text: '', is_correct: false, weight: 0, imageFile: null, imagePreviewUrl: null, existingMediaUrl: null },
+      { option_text: '', is_correct: false, weight: 0, imageFile: null, imagePreviewUrl: null, existingMediaUrl: null },
     ]);
-    setAttachmentFile(null);
-    setAttachmentPreviewUrl(null);
-    setDeleteExistingMedia(false);
+    setQuestionImages([]);
+    setDeletedMediaIds([]);
     setIsOpen(true);
   };
 
@@ -99,22 +144,35 @@ export default function QuestionsPage() {
     if (quest.type === 'pg' && quest.options) {
       setOptions(
         quest.options.map((opt) => ({
+          id: opt.id,
           option_text: opt.option_text,
           is_correct: !!opt.is_correct,
           weight: parseFloat(String(opt.weight || 0)),
+          imageFile: null,
+          imagePreviewUrl: null,
+          existingMediaUrl: opt.media && opt.media.length > 0 ? getMediaUrl(opt.media[0].original_url || opt.media[0].url) : null,
         }))
       );
     } else {
       setOptions([]);
     }
-    setAttachmentFile(null);
-    setAttachmentPreviewUrl(null);
-    setDeleteExistingMedia(false);
+
+    if (quest.media && quest.media.length > 0) {
+      setQuestionImages(
+        quest.media.map((med: any) => ({
+          id: med.id,
+          previewUrl: getMediaUrl(med.original_url || med.url),
+        }))
+      );
+    } else {
+      setQuestionImages([]);
+    }
+    setDeletedMediaIds([]);
     setIsOpen(true);
   };
 
   const handleAddOption = () => {
-    setOptions([...options, { option_text: '', is_correct: false, weight: 0 }]);
+    setOptions([...options, { option_text: '', is_correct: false, weight: 0, imageFile: null, imagePreviewUrl: null, existingMediaUrl: null }]);
   };
 
   const handleRemoveOption = (index: number) => {
@@ -122,23 +180,24 @@ export default function QuestionsPage() {
   };
 
   const handleOptionChange = (index: number, field: string, value: any) => {
-    const updated = [...options];
-    updated[index] = {
-      ...updated[index],
-      [field]: value,
-    };
-    // If setting correct, optionally reset other options if only 1 is allowed correct
-    if (field === 'is_correct' && value === true) {
-      updated.forEach((opt, idx) => {
-        if (idx !== index) {
-          opt.is_correct = false;
-          opt.weight = 0;
-        } else {
-          opt.weight = opt.weight || 10; // Default weight for correct answer
-        }
-      });
-    }
-    setOptions(updated);
+    setOptions((prev) => {
+      const updated = [...prev];
+      updated[index] = {
+        ...updated[index],
+        [field]: value,
+      };
+      if (field === 'is_correct' && value === true) {
+        updated.forEach((opt, idx) => {
+          if (idx !== index) {
+            opt.is_correct = false;
+            opt.weight = 0;
+          } else {
+            opt.weight = opt.weight || 10;
+          }
+        });
+      }
+      return updated;
+    });
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -174,26 +233,50 @@ export default function QuestionsPage() {
     }
 
     setSubmitting(true);
+    const newAttachments = questionImages
+      .filter((img) => img.file)
+      .map((img) => img.file as File);
+
+    // Filter out options with empty option_text first to align indices perfectly
+    const activeOptions = type === 'pg' ? options.filter(opt => opt.option_text.trim() !== '') : [];
+    const optionFiles = activeOptions.map((opt) => opt.imageFile || null);
+
     const payload = {
       category_id: categoryId,
       type,
       difficulty,
       content_text: contentText,
-      options: type === 'pg' ? options.filter(opt => opt.option_text.trim() !== '') : undefined,
-      clear_media: deleteExistingMedia ? 1 : undefined,
+      options: type === 'pg'
+        ? activeOptions.map((opt) => ({
+            id: opt.id,
+            option_text: opt.option_text,
+            is_correct: opt.is_correct,
+            weight: opt.weight,
+            clear_image: opt.clear_image,
+          }))
+        : undefined,
+      deleted_media_ids: deletedMediaIds.length > 0 ? deletedMediaIds : undefined,
     };
 
     try {
-      const attachments = attachmentFile ? [attachmentFile] : undefined;
       if (selectedQuestion) {
-        await assessmentRepository.updateQuestion(selectedQuestion.id, payload, attachments);
+        await assessmentRepository.updateQuestion(
+          selectedQuestion.id,
+          payload,
+          newAttachments.length > 0 ? newAttachments : undefined,
+          optionFiles
+        );
         addToast({
           type: 'success',
           title: 'Berhasil',
           message: 'Soal berhasil diperbarui.',
         });
       } else {
-        await assessmentRepository.createQuestion(payload, attachments);
+        await assessmentRepository.createQuestion(
+          payload,
+          newAttachments.length > 0 ? newAttachments : undefined,
+          optionFiles
+        );
         addToast({
           type: 'success',
           title: 'Berhasil',
@@ -249,6 +332,25 @@ export default function QuestionsPage() {
     ? questions
     : questions.filter((q) => q.category_id === activeCategoryId);
 
+  // Search filter
+  const searchedQuestions = filteredQuestions.filter((q) => {
+    const text = q.content_text.toLowerCase();
+    const diff = q.difficulty.toLowerCase();
+    const catName = (categories.find((c) => c.id === q.category_id)?.name || '').toLowerCase();
+    const query = searchQuery.toLowerCase();
+    return text.includes(query) || diff.includes(query) || catName.includes(query);
+  });
+
+  // Pagination calculations
+  const ITEMS_PER_PAGE = 10;
+  const totalItems = searchedQuestions.length;
+  const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+  const activePage = Math.min(currentPage, totalPages);
+  
+  const startIndex = (activePage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedQuestions = searchedQuestions.slice(startIndex, endIndex);
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -258,7 +360,7 @@ export default function QuestionsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setActiveCategoryId(null)}
+                onClick={() => handleCategoryChange(null)}
                 className="p-2 rounded-xl text-zinc-550 border-zinc-200 hover:text-zinc-800 dark:border-zinc-800 dark:hover:text-white"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -289,6 +391,19 @@ export default function QuestionsPage() {
         </Card>
       )}
 
+      {activeCategoryId !== null && filteredQuestions.length > 0 && (
+        <div className="relative">
+          <Search className="absolute left-3.5 top-3.5 h-4 w-4 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Cari soal berdasarkan teks pertanyaan, kategori, kesulitan, atau tipe..."
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white outline-none text-sm"
+          />
+        </div>
+      )}
+
       {loading ? (
         <div className="flex h-[40vh] items-center justify-center">
           <Spinner label="Memuat Bank Soal..." />
@@ -298,7 +413,7 @@ export default function QuestionsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Virtual Folder "Semua Soal" */}
           <div
-            onClick={() => setActiveCategoryId('all')}
+            onClick={() => handleCategoryChange('all')}
             className="group relative cursor-pointer overflow-hidden p-6 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/30 backdrop-blur-sm shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-blue-500/30"
           >
             <div className="flex items-center gap-4">
@@ -318,7 +433,7 @@ export default function QuestionsPage() {
             return (
               <div
                 key={cat.id}
-                onClick={() => setActiveCategoryId(cat.id)}
+                onClick={() => handleCategoryChange(cat.id)}
                 className="group relative cursor-pointer overflow-hidden p-6 rounded-2xl border border-zinc-200/60 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/30 backdrop-blur-sm shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:border-indigo-500/30"
               >
                 <div className="flex items-center gap-4">
@@ -344,107 +459,181 @@ export default function QuestionsPage() {
         </Card>
       ) : (
         <Card className="overflow-hidden bg-white dark:bg-zinc-900/30 p-0 border border-zinc-200/60 dark:border-zinc-800/80">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200/60 dark:border-zinc-800/80">
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Pertanyaan</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 w-36">Kategori</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 w-28">Tipe</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 w-28">Kesulitan</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 text-right w-36">Aksi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/80">
-                {filteredQuestions.map((quest) => {
-                  const catName = categories.find((c) => c.id === quest.category_id)?.name || 'N/A';
-                  return (
-                    <tr key={quest.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
-                      <td className="px-6 py-4">
-                        <div className="flex items-start gap-4">
-                          {quest.media && quest.media.length > 0 && (
-                            <img
-                              src={getMediaUrl(quest.media[0].original_url || quest.media[0].url)}
-                              alt="Attachment"
-                              className="w-12 h-12 object-cover rounded-lg border border-zinc-200 dark:border-zinc-850 flex-shrink-0"
-                            />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-2 max-w-md">
-                              {quest.content_text}
-                            </p>
-                          </div>
-                        </div>
-                        {quest.type === 'pg' && quest.options && (
-                          <div className="flex gap-2.5 mt-1.5 flex-wrap">
-                            {quest.options.map((opt) => (
-                              <span
-                                key={opt.id}
-                                className={`text-[10px] px-2 py-0.5 rounded-md font-medium border ${
-                                  opt.is_correct
-                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-350 dark:border-emerald-900/50'
-                                    : 'bg-zinc-50 text-zinc-500 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
-                                }`}
-                              >
-                                {opt.option_text} {opt.is_correct && `( Skor: ${parseFloat(String(opt.weight || 0))} )`}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        <span className="flex items-center gap-1.5">
-                          <Layers className="h-3.5 w-3.5 text-zinc-400" />
-                          {catName}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-xs font-bold uppercase">
-                        <span className={`inline-flex px-2 py-0.5 rounded-full ${
-                          quest.type === 'pg'
-                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400'
-                            : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-400'
-                        }`}>
-                          {quest.type === 'pg' ? 'Pilihan Ganda' : 'Esai'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-xs font-semibold capitalize">
-                        <span className={`inline-flex px-2 py-0.5 rounded-lg ${
-                          quest.difficulty === 'hard'
-                            ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400'
-                            : quest.difficulty === 'medium'
-                            ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400'
-                            : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
-                        }`}>
-                          {quest.difficulty === 'easy' ? 'Mudah' : quest.difficulty === 'medium' ? 'Sedang' : 'Sulit'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleOpenEdit(quest)}
-                          className="inline-flex items-center p-2 rounded-xl text-blue-600 border-zinc-200 dark:border-zinc-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedQuestion(quest);
-                            setIsDeleting(true);
-                          }}
-                          className="inline-flex items-center p-2 rounded-xl text-red-600 border-zinc-200 dark:border-zinc-800 hover:text-red-700 hover:border-red-300 hover:bg-red-50/50 dark:hover:text-red-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
+          {searchedQuestions.length === 0 ? (
+            <div className="p-12 text-center text-zinc-500 dark:text-zinc-400">
+              <Search className="h-8 w-8 text-zinc-300 mx-auto mb-2" />
+              <p className="text-sm font-semibold">Soal tidak ditemukan.</p>
+              <p className="text-xs text-zinc-400 mt-1">Coba gunakan kata kunci pencarian lainnya.</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200/60 dark:border-zinc-800/80">
+                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Pertanyaan</th>
+                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 w-36">Kategori</th>
+                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 w-28">Tipe</th>
+                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 w-28">Kesulitan</th>
+                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 text-right w-36">Aksi</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  </thead>
+                  <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/80">
+                    {paginatedQuestions.map((quest) => {
+                      const catName = categories.find((c) => c.id === quest.category_id)?.name || 'N/A';
+                      return (
+                        <tr key={quest.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
+                          <td className="px-6 py-4">
+                            <div className="flex items-start gap-4">
+                              {quest.media && quest.media.length > 0 && (
+                                <div className="relative flex-shrink-0">
+                                  <img
+                                    src={getMediaUrl(quest.media[0].original_url || quest.media[0].url)}
+                                    alt="Attachment"
+                                    className="w-12 h-12 object-cover rounded-lg border border-zinc-200 dark:border-zinc-850"
+                                  />
+                                  {quest.media.length > 1 && (
+                                    <span className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-white dark:border-zinc-900 shadow">
+                                      +{quest.media.length - 1}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-2 max-w-md">
+                                  {quest.content_text}
+                                </p>
+                              </div>
+                            </div>
+                            {quest.type === 'pg' && quest.options && (
+                              <div className="flex gap-2.5 mt-1.5 flex-wrap">
+                                {quest.options.map((opt) => (
+                                  <span
+                                    key={opt.id}
+                                    className={`text-[10px] px-2 py-0.5 rounded-md font-medium border flex items-center gap-1.5 ${
+                                      opt.is_correct
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-350 dark:border-emerald-900/50'
+                                        : 'bg-zinc-50 text-zinc-500 border-zinc-200 dark:bg-zinc-900 dark:text-zinc-400 dark:border-zinc-800'
+                                    }`}
+                                  >
+                                    {opt.media && opt.media.length > 0 && (
+                                      <img
+                                        src={getMediaUrl(opt.media[0].original_url || opt.media[0].url)}
+                                        alt="Opt"
+                                        className="w-3.5 h-3.5 object-cover rounded"
+                                      />
+                                    )}
+                                    {opt.option_text} {opt.is_correct && `( Skor: ${parseFloat(String(opt.weight || 0))} )`}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                            <span className="flex items-center gap-1.5">
+                              <Layers className="h-3.5 w-3.5 text-zinc-400" />
+                              {catName}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-xs font-bold uppercase">
+                            <span className={`inline-flex px-2 py-0.5 rounded-full ${
+                              quest.type === 'pg'
+                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400'
+                                : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/20 dark:text-indigo-400'
+                            }`}>
+                              {quest.type === 'pg' ? 'Pilihan Ganda' : 'Esai'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-xs font-semibold capitalize">
+                            <span className={`inline-flex px-2 py-0.5 rounded-lg ${
+                              quest.difficulty === 'hard'
+                                ? 'bg-red-50 text-red-600 dark:bg-red-950/20 dark:text-red-400'
+                                : quest.difficulty === 'medium'
+                                ? 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400'
+                                : 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
+                            }`}>
+                              {quest.difficulty === 'easy' ? 'Mudah' : quest.difficulty === 'medium' ? 'Sedang' : 'Sulit'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-right space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenEdit(quest)}
+                              className="inline-flex items-center p-2 rounded-xl text-blue-600 border-zinc-200 dark:border-zinc-800 hover:text-blue-700 hover:border-blue-300 hover:bg-blue-50/50 dark:hover:text-blue-400 dark:hover:border-blue-900/50 dark:hover:bg-blue-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedQuestion(quest);
+                                setIsDeleting(true);
+                              }}
+                              className="inline-flex items-center p-2 rounded-xl text-red-600 border-zinc-200 dark:border-zinc-800 hover:text-red-700 hover:border-red-300 hover:bg-red-50/50 dark:hover:text-red-400 dark:hover:border-red-900/50 dark:hover:bg-red-950/20 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination Bar */}
+              {totalItems > 0 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-zinc-200/60 dark:border-zinc-800/80 bg-zinc-50/50 dark:bg-zinc-900/10 text-xs">
+                  <span className="text-zinc-500 font-medium">
+                    Menampilkan <strong className="text-zinc-800 dark:text-zinc-200">{startIndex + 1}</strong> -{' '}
+                    <strong className="text-zinc-800 dark:text-zinc-200">{Math.min(endIndex, totalItems)}</strong> dari{' '}
+                    <strong className="text-zinc-800 dark:text-zinc-200">{totalItems}</strong> soal
+                  </span>
+                  
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(activePage - 1)}
+                      disabled={activePage === 1}
+                      className="p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer font-bold transition-all"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    
+                    {Array.from({ length: totalPages }).map((_, pageIdx) => {
+                      const pageNum = pageIdx + 1;
+                      const isPageActive = pageNum === activePage;
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`px-3 py-1.5 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+                            isPageActive
+                              ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                              : 'border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-650 dark:text-zinc-350'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    
+                    <button
+                      type="button"
+                      onClick={() => handlePageChange(activePage + 1)}
+                      disabled={activePage === totalPages}
+                      className="p-2 rounded-lg border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-transparent cursor-pointer font-bold transition-all"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </Card>
       )}
 
@@ -528,67 +717,66 @@ export default function QuestionsPage() {
           {/* Lampiran Gambar Ujian */}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-              Lampiran Gambar Soal (Opsional)
+              Lampiran Gambar Soal (Bisa lebih dari 1)
             </label>
             
-            {/* Existing Attachment Display */}
-            {selectedQuestion?.media && selectedQuestion.media.length > 0 && !deleteExistingMedia && (
-              <div className="relative w-36 h-24 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950 flex-shrink-0">
-                <img
-                  src={getMediaUrl(selectedQuestion.media[0].original_url || selectedQuestion.media[0].url)}
-                  alt="Attachment"
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => setDeleteExistingMedia(true)}
-                  className="absolute top-1 right-1 bg-red-650 text-white rounded-full p-1 hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
-                  title="Hapus gambar saat ini"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            )}
+            {/* Display list of images */}
+            <div className="flex flex-wrap gap-3">
+              {questionImages.map((img, idx) => {
+                if (img.isDeleted) return null;
+                return (
+                  <div key={idx} className="relative w-36 h-24 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950 flex-shrink-0">
+                    <img
+                      src={img.previewUrl}
+                      alt={`Question Image ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (img.id) {
+                          setDeletedMediaIds((prev) => [...prev, img.id!]);
+                          setQuestionImages((prev) => {
+                            const updated = [...prev];
+                            updated[idx] = { ...updated[idx], isDeleted: true };
+                            return updated;
+                          });
+                        } else {
+                          setQuestionImages((prev) => prev.filter((_, i) => i !== idx));
+                        }
+                      }}
+                      className="absolute top-1 right-1 bg-red-650 text-white rounded-full p-1 hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
+                      title="Hapus gambar"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
 
-            {/* New Attachment Upload Preview */}
-            {attachmentPreviewUrl ? (
-              <div className="relative w-36 h-24 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-850 bg-zinc-100 dark:bg-zinc-950 flex-shrink-0">
-                <img
-                  src={attachmentPreviewUrl}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAttachmentFile(null);
-                    setAttachmentPreviewUrl(null);
+              {/* Add New Attachment Button/Input */}
+              <div className="relative w-36 h-24 rounded-lg border-2 border-dashed border-zinc-300 dark:border-zinc-800 hover:border-blue-500 transition-colors flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-900/50 cursor-pointer overflow-hidden">
+                <Plus className="h-6 w-6 text-zinc-400" />
+                <span className="text-[10px] text-zinc-500 font-medium mt-1">Tambah Gambar</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files) {
+                      const newImages = Array.from(files).map((file) => ({
+                        file,
+                        previewUrl: URL.createObjectURL(file),
+                      }));
+                      setQuestionImages((prev) => [...prev, ...newImages]);
+                    }
                   }}
-                  className="absolute top-1 right-1 bg-zinc-800/80 text-white rounded-full p-1 hover:bg-zinc-900 transition-colors cursor-pointer shadow-sm"
-                  title="Batal pilih"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                  disabled={submitting}
+                  className="absolute inset-0 opacity-0 cursor-pointer"
+                />
               </div>
-            ) : (
-              (!selectedQuestion?.media || selectedQuestion.media.length === 0 || deleteExistingMedia) && (
-                <div className="flex items-center gap-3">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setAttachmentFile(file);
-                        setAttachmentPreviewUrl(URL.createObjectURL(file));
-                      }
-                    }}
-                    disabled={submitting}
-                    className="text-xs text-zinc-550 dark:text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-950/20 dark:file:text-blue-400 hover:file:bg-blue-100 cursor-pointer"
-                  />
-                </div>
-              )
-            )}
+            </div>
           </div>
 
           {/* Multiple Choice Options Panel */}
@@ -609,12 +797,12 @@ export default function QuestionsPage() {
 
               <div className="space-y-3">
                 {options.map((opt, idx) => (
-                  <div key={idx} className="flex gap-3 items-center">
+                  <div key={idx} className="flex gap-3 items-center flex-wrap sm:flex-nowrap">
                     {/* Mark as Correct Answer checkbox */}
                     <button
                       type="button"
                       onClick={() => handleOptionChange(idx, 'is_correct', !opt.is_correct)}
-                      className={`h-9 w-9 rounded-xl border flex items-center justify-center transition-all ${
+                      className={`h-9 w-9 rounded-xl border flex-shrink-0 flex items-center justify-center transition-all ${
                         opt.is_correct
                           ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/25'
                           : 'border-zinc-200 hover:border-zinc-300 dark:border-zinc-850 bg-white dark:bg-zinc-950 text-zinc-300'
@@ -623,24 +811,69 @@ export default function QuestionsPage() {
                       <Check className="h-4.5 w-4.5" />
                     </button>
 
+                    {/* Option Image Thumbnail & Upload */}
+                    <div className="relative h-9 w-12 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex-shrink-0 flex items-center justify-center overflow-hidden group/optimg">
+                      {opt.imagePreviewUrl || (opt.existingMediaUrl && !opt.clear_image) ? (
+                        <>
+                          <img
+                            src={opt.imagePreviewUrl || opt.existingMediaUrl || ''}
+                            alt="Option image"
+                            className="w-full h-full object-cover"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (opt.existingMediaUrl) {
+                                handleOptionChange(idx, 'clear_image', true);
+                              }
+                              handleOptionChange(idx, 'imageFile', null);
+                              handleOptionChange(idx, 'imagePreviewUrl', null);
+                            }}
+                            className="absolute inset-0 bg-red-650 text-white opacity-0 group-hover/optimg:opacity-100 flex items-center justify-center transition-opacity cursor-pointer"
+                            title="Hapus gambar"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 text-zinc-400" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleOptionChange(idx, 'imageFile', file);
+                                handleOptionChange(idx, 'imagePreviewUrl', URL.createObjectURL(file));
+                                handleOptionChange(idx, 'clear_image', false);
+                              }
+                            }}
+                            disabled={submitting}
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                          />
+                        </>
+                      )}
+                    </div>
+
                     {/* Option Text Input */}
                     <input
                       placeholder={`Opsi Jawaban ${idx + 1}`}
                       value={opt.option_text}
                       onChange={(e) => handleOptionChange(idx, 'option_text', e.target.value)}
                       disabled={submitting}
-                      className="flex-1 px-4 py-2 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white outline-none text-sm"
+                      className="flex-1 min-w-[120px] px-4 py-2 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white outline-none text-sm"
                     />
 
                     {/* Score Weight input */}
-                    <div className="w-24">
+                    <div className="w-20">
                       <input
                         type="number"
                         placeholder="Skor"
                         value={opt.weight}
                         onChange={(e) => handleOptionChange(idx, 'weight', parseFloat(e.target.value) || 0)}
                         disabled={submitting}
-                        className="w-full px-3 py-2 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white outline-none text-sm text-center"
+                        className="w-full px-2 py-2 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white outline-none text-sm text-center"
                       />
                     </div>
 

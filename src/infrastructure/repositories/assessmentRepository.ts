@@ -102,32 +102,45 @@ export const assessmentRepository = {
       type: string;
       difficulty: string;
       content_text: string;
-      options?: { option_text: string; is_correct?: boolean; weight?: number }[];
+      options?: { id?: string; option_text: string; is_correct?: boolean; weight?: number }[];
     },
-    attachments?: File[]
+    attachments?: File[],
+    optionAttachments?: (File | null)[]
   ): Promise<Question> {
+    const formData = new FormData();
+    formData.append('category_id', data.category_id);
+    formData.append('type', data.type);
+    formData.append('difficulty', data.difficulty);
+    formData.append('content_text', data.content_text);
+
+    if (data.options) {
+      data.options.forEach((opt, idx) => {
+        if (opt.id) {
+          formData.append(`options[${idx}][id]`, opt.id);
+        }
+        formData.append(`options[${idx}][option_text]`, opt.option_text);
+        formData.append(`options[${idx}][is_correct]`, opt.is_correct ? '1' : '0');
+        formData.append(`options[${idx}][weight]`, (opt.weight || 0).toString());
+      });
+    }
+
     if (attachments && attachments.length > 0) {
-      const formData = new FormData();
-      formData.append('category_id', data.category_id);
-      formData.append('type', data.type);
-      formData.append('difficulty', data.difficulty);
-      formData.append('content_text', data.content_text);
-      if (data.options) {
-        data.options.forEach((opt, idx) => {
-          formData.append(`options[${idx}][option_text]`, opt.option_text);
-          formData.append(`options[${idx}][is_correct]`, opt.is_correct ? '1' : '0');
-          formData.append(`options[${idx}][weight]`, (opt.weight || 0).toString());
-        });
-      }
       attachments.forEach((file) => {
         formData.append('attachments[]', file);
       });
-      const response = await api.post('/api/v1/questions', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return response.data.data;
     }
-    const response = await api.post('/api/v1/questions', data);
+
+    if (optionAttachments && optionAttachments.length > 0) {
+      optionAttachments.forEach((file, idx) => {
+        if (file) {
+          formData.append(`option_attachments[${idx}]`, file);
+        }
+      });
+    }
+
+    const response = await api.post('/api/v1/questions', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data.data;
   },
   async updateQuestion(
@@ -137,33 +150,60 @@ export const assessmentRepository = {
       type: string;
       difficulty: string;
       content_text: string;
-      options?: { option_text: string; is_correct?: boolean; weight?: number }[];
+      clear_media?: boolean;
+      options?: { id?: string; option_text: string; is_correct?: boolean; weight?: number; clear_image?: boolean }[];
+      deleted_media_ids?: string[];
     },
-    attachments?: File[]
+    attachments?: File[],
+    optionAttachments?: (File | null)[]
   ): Promise<Question> {
+    const formData = new FormData();
+    formData.append('_method', 'PUT'); // Method spoofing for Laravel PUT requests with files
+    formData.append('category_id', data.category_id);
+    formData.append('type', data.type);
+    formData.append('difficulty', data.difficulty);
+    formData.append('content_text', data.content_text);
+    if (data.clear_media) {
+      formData.append('clear_media', '1');
+    }
+
+    if (data.options) {
+      data.options.forEach((opt, idx) => {
+        if (opt.id) {
+          formData.append(`options[${idx}][id]`, opt.id);
+        }
+        formData.append(`options[${idx}][option_text]`, opt.option_text);
+        formData.append(`options[${idx}][is_correct]`, opt.is_correct ? '1' : '0');
+        formData.append(`options[${idx}][weight]`, (opt.weight || 0).toString());
+        if (opt.clear_image) {
+          formData.append(`options[${idx}][clear_image]`, '1');
+        }
+      });
+    }
+
+    if (data.deleted_media_ids) {
+      data.deleted_media_ids.forEach((mediaId) => {
+        formData.append('deleted_media_ids[]', mediaId);
+      });
+    }
+
     if (attachments && attachments.length > 0) {
-      const formData = new FormData();
-      formData.append('_method', 'PUT'); // Method spoofing for Laravel PUT requests with files
-      formData.append('category_id', data.category_id);
-      formData.append('type', data.type);
-      formData.append('difficulty', data.difficulty);
-      formData.append('content_text', data.content_text);
-      if (data.options) {
-        data.options.forEach((opt, idx) => {
-          formData.append(`options[${idx}][option_text]`, opt.option_text);
-          formData.append(`options[${idx}][is_correct]`, opt.is_correct ? '1' : '0');
-          formData.append(`options[${idx}][weight]`, (opt.weight || 0).toString());
-        });
-      }
       attachments.forEach((file) => {
         formData.append('attachments[]', file);
       });
-      const response = await api.post(`/api/v1/questions/${id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      return response.data.data;
     }
-    const response = await api.put(`/api/v1/questions/${id}`, data);
+
+    if (optionAttachments && optionAttachments.length > 0) {
+      optionAttachments.forEach((file, idx) => {
+        if (file) {
+          formData.append(`option_attachments[${idx}]`, file);
+        }
+      });
+    }
+
+    const response = await api.post(`/api/v1/questions/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data.data;
   },
   async deleteQuestion(id: string): Promise<void> {
@@ -201,5 +241,13 @@ export const assessmentRepository = {
   },
   async deleteAssessment(id: string): Promise<void> {
     await api.delete(`/api/v1/assessments/${id}`);
+  },
+  async getAssessmentSessions(id: string): Promise<any[]> {
+    const response = await api.get(`/api/v1/assessments/${id}/sessions`);
+    return response.data.data;
+  },
+  async getPublicMonitor(id: string): Promise<{ assessment: any; sessions: any[] }> {
+    const response = await api.get(`/api/v1/public/assessments/${id}/monitor`);
+    return response.data.data;
   },
 };

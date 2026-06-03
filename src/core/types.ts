@@ -24,6 +24,7 @@ export interface QuestionOption {
   option_text: string;
   weight?: string | number;
   is_correct?: boolean; // might be omitted on exam view to prevent cheating
+  media?: any[];
 }
 
 export interface Question {
