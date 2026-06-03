@@ -19,7 +19,8 @@ import {
   ArrowRight, 
   AlertCircle, 
   BookOpen,
-  UserCheck
+  UserCheck,
+  LayoutDashboard
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -131,6 +132,17 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-4">
+            {user?.roles?.includes('Super Admin') && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/admin')}
+                className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:border-blue-950 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                <span>Admin Panel</span>
+              </Button>
+            )}
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-sm font-medium">
               <UserCheck className="h-4 w-4 text-blue-500" />
               <span>{user?.name}</span>
