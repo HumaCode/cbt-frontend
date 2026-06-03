@@ -239,7 +239,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         size="sm"
       >
         <div className="space-y-4">
-          <p className="text-zinc-650 dark:text-zinc-400 text-sm leading-relaxed">
+          <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed">
             Apakah Anda yakin ingin keluar dari akun Anda? Anda harus memasukkan kredensial login kembali untuk mengakses ujian dan data Anda.
           </p>
           <div className="flex justify-end gap-3 pt-2">

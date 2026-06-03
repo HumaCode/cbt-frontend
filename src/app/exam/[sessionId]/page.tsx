@@ -448,7 +448,7 @@ export default function ExamPage({ params }: PageProps) {
                     onChange={(e) => saveAnswerLocally(currentQuestion.id, e.target.value)}
                     onBlur={(e) => syncAnswerWithApi(currentQuestion.id, e.target.value)}
                     placeholder="Tuliskan jawaban lengkap Anda di sini..."
-                    className="w-full min-h-[220px] p-4 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-850 dark:bg-zinc-950 dark:text-white placeholder-zinc-500 outline-none resize-y transition-all text-base leading-relaxed"
+                    className="w-full min-h-[220px] p-4 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white text-zinc-900 dark:border-zinc-850 dark:bg-zinc-950 dark:text-white placeholder-zinc-500 outline-none resize-y transition-all text-base leading-relaxed"
                   />
                   <div className="flex justify-between items-center text-xs text-zinc-400">
                     <span>Jawaban Anda disimpan secara lokal otomatis saat mengetik.</span>
@@ -474,7 +474,7 @@ export default function ExamPage({ params }: PageProps) {
                         <span className={`flex h-8 w-8 items-center justify-center rounded-lg font-bold text-sm ${
                           isSelected
                             ? 'bg-blue-600 text-white dark:bg-blue-500'
-                            : 'bg-zinc-100 text-zinc-650 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200/50 dark:border-transparent'
+                            : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200/50 dark:border-transparent'
                         }`}>
                           {letter}
                         </span>

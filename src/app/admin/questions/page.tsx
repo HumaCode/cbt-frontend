@@ -679,7 +679,7 @@ export default function QuestionsPage() {
           </>
         }
       >
-        <p className="text-zinc-650 dark:text-zinc-300 text-sm">
+        <p className="text-zinc-600 dark:text-zinc-300 text-sm">
           Apakah Anda yakin ingin menghapus soal ini dari database? Tindakan ini tidak dapat dibatalkan.
         </p>
       </Modal>

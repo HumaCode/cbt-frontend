@@ -290,7 +290,7 @@ export default function AssessmentsPage() {
                   </h3>
                 </div>
 
-                <div className="space-y-2 text-sm text-zinc-650 dark:text-zinc-400">
+                <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-zinc-400" />
                     <span>Durasi: {exam.duration_minutes} Menit</span>
@@ -541,7 +541,7 @@ export default function AssessmentsPage() {
           </>
         }
       >
-        <p className="text-zinc-650 dark:text-zinc-300 text-sm">
+        <p className="text-zinc-600 dark:text-zinc-300 text-sm">
           Apakah Anda yakin ingin menghapus jadwal ujian <strong className="text-zinc-900 dark:text-zinc-100">{selectedAssessment?.title}</strong>? Peserta tidak akan bisa mengikuti ujian ini lagi.
         </p>
       </Modal>

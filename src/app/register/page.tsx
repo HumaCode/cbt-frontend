@@ -104,7 +104,7 @@ export default function RegisterPage() {
               onChange={(e) => setName(e.target.value)}
               error={errors.name}
               leftIcon={<User className="h-4.5 w-4.5" />}
-              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500"
               disabled={isLoading}
             />
 
@@ -116,7 +116,7 @@ export default function RegisterPage() {
               onChange={(e) => setUsername(e.target.value)}
               error={errors.username}
               leftIcon={<UserPlus className="h-4.5 w-4.5" />}
-              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500"
               disabled={isLoading}
             />
 
@@ -128,7 +128,7 @@ export default function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               error={errors.email}
               leftIcon={<Mail className="h-4.5 w-4.5" />}
-              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500"
               disabled={isLoading}
             />
 
@@ -150,7 +150,7 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
                 </button>
               }
-              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500"
               disabled={isLoading}
             />
 
@@ -172,7 +172,7 @@ export default function RegisterPage() {
                   {showConfirmPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
                 </button>
               }
-              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500"
               disabled={isLoading}
             />
 

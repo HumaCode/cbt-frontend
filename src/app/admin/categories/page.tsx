@@ -250,7 +250,7 @@ export default function CategoriesPage() {
           </>
         }
       >
-        <p className="text-zinc-650 dark:text-zinc-300 text-sm">
+        <p className="text-zinc-600 dark:text-zinc-300 text-sm">
           Apakah Anda yakin ingin menghapus kategori <strong className="text-zinc-900 dark:text-zinc-100">{selectedCategory?.name}</strong>? Tindakan ini tidak dapat dibatalkan.
         </p>
       </Modal>
