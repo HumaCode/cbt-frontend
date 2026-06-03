@@ -366,6 +366,27 @@ export default function AssessmentsPage() {
                         <span>Selesai: {new Date(exam.end_date).toLocaleString('id-ID')}</span>
                       </div>
                     </div>
+                    
+                    {/* Groups allowed badges */}
+                    <div className="pt-2 border-t border-dashed border-zinc-100 dark:border-zinc-800/60">
+                      <div className="flex flex-wrap gap-1.5 items-center">
+                        <span className="text-[11px] font-bold text-zinc-500 dark:text-zinc-450 uppercase tracking-wide">Akses:</span>
+                        {exam.groups && exam.groups.length > 0 ? (
+                          exam.groups.map((group) => (
+                            <span
+                              key={group.id}
+                              className="inline-flex px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-blue-50 text-blue-700 border border-blue-100/50 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/30"
+                            >
+                              {group.name}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="inline-flex px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-50 text-rose-700 border border-rose-100/50 dark:bg-rose-950/20 dark:text-rose-450 dark:border-rose-900/20">
+                            Akses Tertutup (Hubungkan Grup)
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
