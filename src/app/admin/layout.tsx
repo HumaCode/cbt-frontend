@@ -6,6 +6,7 @@ import { authRepository } from '@/infrastructure/repositories/authRepository';
 import { User } from '@/core/types';
 import { useToastStore } from '@/presentation/components/Toast';
 import { Button } from '@/presentation/components/Button';
+import { ThemeToggle } from '@/presentation/components/ThemeToggle';
 import { 
   GraduationCap, 
   LayoutDashboard, 
@@ -210,6 +211,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
           
           <div className="flex items-center gap-4 ml-auto">
+            <ThemeToggle />
             <div className="flex flex-col text-right">
               <span className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{user?.name}</span>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">Administrator</span>

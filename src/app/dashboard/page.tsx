@@ -9,6 +9,7 @@ import { useToastStore } from '@/presentation/components/Toast';
 import { Card } from '@/presentation/components/Card';
 import { Button } from '@/presentation/components/Button';
 import { Modal } from '@/presentation/components/Modal';
+import { ThemeToggle } from '@/presentation/components/ThemeToggle';
 import { User, Assessment } from '@/core/types';
 import { 
   GraduationCap, 
@@ -132,12 +133,13 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             {user?.roles?.includes('Super Admin') && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => router.push('/admin')}
-                className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:border-blue-950 dark:hover:bg-blue-950/20 dark:hover:text-blue-300"
+                className="flex items-center gap-2 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:border-blue-950 dark:hover:bg-blue-950/20 dark:hover:text-red-300"
               >
                 <LayoutDashboard className="h-4 w-4" />
                 <span>Admin Panel</span>
