@@ -21,6 +21,8 @@ export const deleteCookie = (name: string) => {
   document.cookie = `${name}=; Max-Age=-99999999; path=/; SameSite=Lax`;
 };
 
+export const API_VERSION = 'v1';
+
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   headers: {
@@ -29,9 +31,16 @@ export const api = axios.create({
   },
 });
 
-// Request interceptor to attach JWT token
+// Request interceptor to attach JWT token and prepend dynamic API version prefix
 api.interceptors.request.use(
   (config) => {
+    // Dynamically prepend /api/{API_VERSION} to relative URLs
+    const apiPrefix = `/api/${API_VERSION}`;
+    if (config.url && !config.url.startsWith('http')) {
+      const cleanUrl = config.url.replace(/^\/(api\/v[0-9]+)?\/?/, '');
+      config.url = `${apiPrefix}/${cleanUrl}`;
+    }
+
     const token = getCookie('cbt_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

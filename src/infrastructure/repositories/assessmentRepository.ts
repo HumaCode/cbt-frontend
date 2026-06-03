@@ -3,7 +3,7 @@ import { Assessment, AssessmentSession, SessionAnswer, ProctoringLog, Category, 
 
 export const assessmentRepository = {
   async getAssessments(params?: { search?: string; active?: boolean | number }): Promise<Assessment[]> {
-    const response = await api.get('/api/v1/assessments', { params });
+    const response = await api.get('/assessments', { params });
     // Laravel paginated result usually wraps data in data.data or data
     // Let's handle both. If response.data.data has a data attribute (paginator), use that
     const resData = response.data.data;
@@ -17,17 +17,17 @@ export const assessmentRepository = {
   },
 
   async getAssessment(id: string): Promise<Assessment> {
-    const response = await api.get(`/api/v1/assessments/${id}`);
+    const response = await api.get(`/assessments/${id}`);
     return response.data.data as Assessment;
   },
 
   async startSession(assessmentId: string): Promise<AssessmentSession> {
-    const response = await api.post(`/api/v1/assessments/${assessmentId}/start`);
+    const response = await api.post(`/assessments/${assessmentId}/start`);
     return response.data.data as AssessmentSession;
   },
 
   async startTimer(sessionId: string): Promise<AssessmentSession> {
-    const response = await api.post(`/api/v1/sessions/${sessionId}/start-timer`);
+    const response = await api.post(`/sessions/${sessionId}/start-timer`);
     return response.data.data as AssessmentSession;
   },
 
@@ -37,7 +37,7 @@ export const assessmentRepository = {
     selectedOptionId: string | null, 
     answerText: string | null = null
   ): Promise<SessionAnswer> {
-    const response = await api.post(`/api/v1/sessions/${sessionId}/answers`, {
+    const response = await api.post(`/sessions/${sessionId}/answers`, {
       question_id: questionId,
       selected_option_id: selectedOptionId,
       answer_text: answerText,
@@ -46,17 +46,17 @@ export const assessmentRepository = {
   },
 
   async finishSession(sessionId: string): Promise<AssessmentSession> {
-    const response = await api.post(`/api/v1/sessions/${sessionId}/finish`);
+    const response = await api.post(`/sessions/${sessionId}/finish`);
     return response.data.data as AssessmentSession;
   },
 
   async getCertificate(sessionId: string): Promise<any> {
-    const response = await api.get(`/api/v1/sessions/${sessionId}/certificate`);
+    const response = await api.get(`/sessions/${sessionId}/certificate`);
     return response.data.data;
   },
 
   async submitProctorLog(sessionId: string, eventType: string, eventDetails?: string): Promise<ProctoringLog> {
-    const response = await api.post(`/api/v1/sessions/${sessionId}/proctor-logs`, {
+    const response = await api.post(`/sessions/${sessionId}/proctor-logs`, {
       event_type: eventType,
       event_details: eventDetails || '',
     });
@@ -64,33 +64,33 @@ export const assessmentRepository = {
   },
 
   async getProctorLogs(sessionId: string): Promise<ProctoringLog[]> {
-    const response = await api.get(`/api/v1/sessions/${sessionId}/proctor-logs`);
+    const response = await api.get(`/sessions/${sessionId}/proctor-logs`);
     return response.data.data as ProctoringLog[];
   },
 
   // Categories CRUD
   async getCategories(params?: any): Promise<Category[]> {
-    const response = await api.get('/api/v1/categories', { params });
+    const response = await api.get('/categories', { params });
     const resData = response.data.data;
     if (resData && Array.isArray(resData.data)) return resData.data;
     if (Array.isArray(resData)) return resData;
     return [];
   },
   async createCategory(data: { name: string; description?: string }): Promise<Category> {
-    const response = await api.post('/api/v1/categories', data);
+    const response = await api.post('/categories', data);
     return response.data.data;
   },
   async updateCategory(id: string, data: { name: string; description?: string }): Promise<Category> {
-    const response = await api.put(`/api/v1/categories/${id}`, data);
+    const response = await api.put(`/categories/${id}`, data);
     return response.data.data;
   },
   async deleteCategory(id: string): Promise<void> {
-    await api.delete(`/api/v1/categories/${id}`);
+    await api.delete(`/categories/${id}`);
   },
 
   // Questions CRUD
   async getQuestions(params?: any): Promise<Question[]> {
-    const response = await api.get('/api/v1/questions', { params });
+    const response = await api.get('/questions', { params });
     const resData = response.data.data;
     if (resData && Array.isArray(resData.data)) return resData.data;
     if (Array.isArray(resData)) return resData;
@@ -138,7 +138,7 @@ export const assessmentRepository = {
       });
     }
 
-    const response = await api.post('/api/v1/questions', formData, {
+    const response = await api.post('/questions', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data.data;
@@ -201,13 +201,13 @@ export const assessmentRepository = {
       });
     }
 
-    const response = await api.post(`/api/v1/questions/${id}`, formData, {
+    const response = await api.post(`/questions/${id}`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data.data;
   },
   async deleteQuestion(id: string): Promise<void> {
-    await api.delete(`/api/v1/questions/${id}`);
+    await api.delete(`/questions/${id}`);
   },
 
   // Assessments CRUD
@@ -222,7 +222,7 @@ export const assessmentRepository = {
     passing_grade?: number;
     questions?: string[];
   }): Promise<Assessment> {
-    const response = await api.post('/api/v1/assessments', data);
+    const response = await api.post('/assessments', data);
     return response.data.data;
   },
   async updateAssessment(id: string, data: {
@@ -236,18 +236,18 @@ export const assessmentRepository = {
     passing_grade?: number;
     questions?: string[];
   }): Promise<Assessment> {
-    const response = await api.put(`/api/v1/assessments/${id}`, data);
+    const response = await api.put(`/assessments/${id}`, data);
     return response.data.data;
   },
   async deleteAssessment(id: string): Promise<void> {
-    await api.delete(`/api/v1/assessments/${id}`);
+    await api.delete(`/assessments/${id}`);
   },
   async getAssessmentSessions(id: string): Promise<any[]> {
-    const response = await api.get(`/api/v1/assessments/${id}/sessions`);
+    const response = await api.get(`/assessments/${id}/sessions`);
     return response.data.data;
   },
   async getPublicMonitor(id: string): Promise<{ assessment: any; sessions: any[] }> {
-    const response = await api.get(`/api/v1/public/assessments/${id}/monitor`);
+    const response = await api.get(`/public/assessments/${id}/monitor`);
     return response.data.data;
   },
 };

@@ -10,7 +10,7 @@ export interface LoginResponse {
 
 export const authRepository = {
   async login(loginInput: string, passwordInput: string): Promise<LoginResponse> {
-    const response = await api.post('/api/v1/auth/login', {
+    const response = await api.post('/auth/login', {
       login: loginInput,
       password: passwordInput,
     });
@@ -22,7 +22,7 @@ export const authRepository = {
   },
 
   async register(nameInput: string, usernameInput: string, emailInput: string, passwordInput: string, passwordConfirmationInput: string): Promise<any> {
-    const response = await api.post('/api/v1/auth/register', {
+    const response = await api.post('/auth/register', {
       name: nameInput,
       username: usernameInput,
       email: emailInput,
@@ -33,12 +33,12 @@ export const authRepository = {
   },
 
   async me(): Promise<User> {
-    const response = await api.get('/api/v1/auth/me');
+    const response = await api.get('/auth/me');
     return response.data.data as User;
   },
 
   async logout(): Promise<void> {
-    await api.post('/api/v1/auth/logout');
+    await api.post('/auth/logout');
     deleteCookie('cbt_token');
   },
 };
