@@ -8,6 +8,7 @@ import { Card } from '@/presentation/components/Card';
 import { Button } from '@/presentation/components/Button';
 import { Spinner } from '@/presentation/components/Spinner';
 import { useToastStore } from '@/presentation/components/Toast';
+import { Modal } from '@/presentation/components/Modal';
 import { 
   ArrowLeft, 
   RefreshCw, 
@@ -47,6 +48,13 @@ export default function MonitorPage({ params }: PageProps) {
   // Selection and deletion states
   const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
+  // Custom delete modal states
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [deleteType, setDeleteType] = useState<'single' | 'bulk' | null>(null);
+  const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
+  const [targetSessionName, setTargetSessionName] = useState<string | null>(null);
+  const [isDeletingSession, setIsDeletingSession] = useState(false);
 
   // Load page from URL query string on mount
   useEffect(() => {
@@ -203,21 +211,33 @@ export default function MonitorPage({ params }: PageProps) {
     }
   };
 
-  const handleDeleteSingle = async (sessionId: string, userName: string) => {
-    if (!window.confirm(`Apakah Anda yakin ingin menghapus sesi ujian untuk peserta "${userName}"?\nTindakan ini akan menghapus semua riwayat jawaban dan log kecurangan peserta tersebut secara permanen.`)) {
-      return;
-    }
+  const handleDeleteSingle = (sessionId: string, userName: string) => {
+    setDeleteType('single');
+    setTargetSessionId(sessionId);
+    setTargetSessionName(userName);
+    setIsDeleteConfirmOpen(true);
+  };
 
+  const handleBulkDelete = () => {
+    if (selectedSessionIds.length === 0) return;
+    setDeleteType('bulk');
+    setIsDeleteConfirmOpen(true);
+  };
+
+  const confirmSingleDelete = async () => {
+    if (!targetSessionId) return;
+    setIsDeletingSession(true);
     try {
-      await assessmentRepository.deleteAssessmentSession(sessionId);
+      await assessmentRepository.deleteAssessmentSession(targetSessionId);
       addToast({
         type: 'success',
         title: 'Sesi Dihapus',
-        message: `Sesi ujian ${userName} berhasil dihapus.`,
+        message: `Sesi ujian ${targetSessionName || 'peserta'} berhasil dihapus.`,
       });
       // Filter out deleted session
-      setSessions(prev => prev.filter(s => s.id !== sessionId));
-      setSelectedSessionIds(prev => prev.filter(id => id !== sessionId));
+      setSessions(prev => prev.filter(s => s.id !== targetSessionId));
+      setSelectedSessionIds(prev => prev.filter(id => id !== targetSessionId));
+      setIsDeleteConfirmOpen(false);
     } catch (err: any) {
       console.error(err);
       addToast({
@@ -225,17 +245,14 @@ export default function MonitorPage({ params }: PageProps) {
         title: 'Gagal Menghapus Sesi',
         message: err.response?.data?.message || 'Terjadi kesalahan saat menghapus sesi.',
       });
+    } finally {
+      setIsDeletingSession(false);
     }
   };
 
-  const handleBulkDelete = async () => {
+  const confirmBulkDelete = async () => {
     if (selectedSessionIds.length === 0) return;
-    
-    if (!window.confirm(`Apakah Anda yakin ingin menghapus ${selectedSessionIds.length} sesi ujian yang terpilih?\nTindakan ini akan menghapus semua riwayat jawaban dan log kecurangan dari seluruh sesi yang dipilih secara permanen.`)) {
-      return;
-    }
-
-    setIsBulkDeleting(true);
+    setIsDeletingSession(true);
     try {
       await assessmentRepository.bulkDeleteAssessmentSessions(selectedSessionIds);
       addToast({
@@ -246,6 +263,7 @@ export default function MonitorPage({ params }: PageProps) {
       // Filter out deleted sessions
       setSessions(prev => prev.filter(s => !selectedSessionIds.includes(s.id)));
       setSelectedSessionIds([]);
+      setIsDeleteConfirmOpen(false);
     } catch (err: any) {
       console.error(err);
       addToast({
@@ -254,7 +272,7 @@ export default function MonitorPage({ params }: PageProps) {
         message: err.response?.data?.message || 'Terjadi kesalahan saat menghapus sesi masal.',
       });
     } finally {
-      setIsBulkDeleting(false);
+      setIsDeletingSession(false);
     }
   };
 
@@ -619,6 +637,51 @@ export default function MonitorPage({ params }: PageProps) {
           </div>
         )}
       </Card>
+
+      {/* Custom Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => !isDeletingSession && setIsDeleteConfirmOpen(false)}
+        title={deleteType === 'bulk' ? 'Hapus Masal Sesi Ujian' : 'Hapus Sesi Ujian'}
+        size="sm"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 text-red-600 dark:text-red-500">
+            <AlertTriangle className="h-6 w-6 flex-shrink-0" />
+            <h4 className="font-extrabold text-sm">Tindakan ini tidak dapat dibatalkan!</h4>
+          </div>
+
+          <p className="text-zinc-650 dark:text-zinc-400 text-sm leading-relaxed">
+            {deleteType === 'bulk' ? (
+              <>
+                Apakah Anda yakin ingin menghapus <strong className="text-red-600 dark:text-red-400">{selectedSessionIds.length} sesi ujian</strong> yang terpilih secara permanen? Semua riwayat jawaban dan log kecurangan dari seluruh sesi yang dipilih akan dihapus secara permanen dari sistem.
+              </>
+            ) : (
+              <>
+                Apakah Anda yakin ingin menghapus sesi ujian untuk peserta <strong className="text-red-600 dark:text-red-400">"{targetSessionName}"</strong>? Semua riwayat jawaban dan log kecurangan peserta tersebut akan dihapus secara permanen dari sistem.
+              </>
+            )}
+          </p>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteConfirmOpen(false)}
+              disabled={isDeletingSession}
+              className="cursor-pointer"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={deleteType === 'bulk' ? confirmBulkDelete : confirmSingleDelete}
+              isLoading={isDeletingSession}
+              className="bg-red-600 hover:bg-red-500 text-white cursor-pointer font-bold"
+            >
+              {isDeletingSession ? 'Menghapus...' : 'Ya, Hapus'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
