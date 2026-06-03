@@ -22,6 +22,7 @@ export default function RootLayout({
     <html
       lang="id"
       className={`${inter.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <head>
         <script
