@@ -31,3 +31,18 @@ Berikut adalah daftar tugas untuk melengkapi Portal CBT menjadi sistem ujian yan
   - [x] Tambahkan toggle opsi rilis sertifikat: "Otomatis Rilis setelah Ujian Selesai" atau "Rilis Manual oleh Admin".
 - [x] **Dasbor Statistik Kualitas Soal (Item Analysis)**
   - [x] Buat grafik statistik soal tersulit dan termudah berdasarkan presentasi keberhasilan jawaban seluruh peserta.
+
+---
+
+## 🔵 Fase 2 (Pengembangan Lanjutan & Enterprise)
+- [ ] **Rubrik Penilaian Soal Esai (Manual Grading Panel)**
+  - [ ] Tambahkan dashboard koreksi jawaban esai peserta untuk admin/penguji.
+  - [ ] Sediakan form input nilai manual ($0 - 100$) per jawaban esai.
+- [ ] **Manajemen Peserta & Grup via Impor Excel**
+  - [ ] Sediakan modul tambah/kelola peserta dan pembagian grup kelas.
+  - [ ] Implementasikan fitur impor data peserta massal dari file spreadsheet (`.xlsx`).
+- [ ] **Kustomisasi Desain Template Sertifikat (Certificate Builder)**
+  - [ ] Sediakan pilihan template sertifikat kelulusan bagi admin.
+- [ ] **Analisis Performa Ujian Lanjutan (Group Analytics)**
+  - [ ] Buat bagan atau grafik komparasi performa rata-rata skor antar kelas/grup peserta.
+
