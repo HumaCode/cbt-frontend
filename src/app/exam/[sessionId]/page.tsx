@@ -196,6 +196,12 @@ export default function ExamPage({ params }: PageProps) {
       if (currentSession?.assessment_id) {
         localStorage.setItem('cbt_active_assessment_id', currentSession.assessment_id);
       }
+
+      addToast({
+        type: 'success',
+        title: 'Ujian Dimulai',
+        message: 'Selamat mengerjakan ujian!',
+      });
     } catch (e) {
       console.error(e);
       addToast({

@@ -149,11 +149,6 @@ export default function DashboardPage() {
     setIsStartingExam(true);
     try {
       const session = await startExamSession(selectedAssessment.id);
-      addToast({
-        type: 'success',
-        title: 'Ujian Dimulai',
-        message: 'Selamat mengerjakan ujian!',
-      });
       setIsStartModalOpen(false);
       router.push(`/exam/${session.id}`);
     } catch (err: any) {
