@@ -54,6 +54,7 @@ export interface Assessment {
   passing_grade_type?: 'overall' | 'per_category';
   questions?: Question[];
   groups?: Group[];
+  sessions?: AssessmentSession[];
 }
 
 export interface SessionAnswer {

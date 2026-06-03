@@ -70,25 +70,57 @@ export default function DashboardPage() {
     fetchData();
   }, [addToast]);
 
-  const getExamStatus = (startDateStr: string, endDateStr: string) => {
+  const getExamStatus = (assessment: Assessment) => {
     if (!mounted) {
       return {
         isActive: true,
         badgeText: 'Aktif',
         badgeClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-900/30',
         buttonText: 'Mulai Ujian',
+        actionType: 'start' as 'start' | 'resume' | 'result' | 'disabled',
+        session: null as any,
       };
     }
+
     const now = new Date();
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+    const startDate = new Date(assessment.start_date);
+    const endDate = new Date(assessment.end_date);
+
+    // Check user attempts/sessions
+    const userSessions = assessment.sessions || [];
+    const completedSession = userSessions.find(s => s.status === 'completed' || s.status === 'force_submitted');
+    const inProgressSession = userSessions.find(s => s.status === 'in_progress');
+
+    if (completedSession) {
+      return {
+        isActive: true,
+        badgeText: 'Sudah Dikerjakan',
+        badgeClass: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400 border border-blue-200/40 dark:border-blue-900/30 font-bold',
+        buttonText: 'Lihat Hasil',
+        actionType: 'result' as const,
+        session: completedSession,
+      };
+    }
+
+    if (inProgressSession) {
+      return {
+        isActive: true,
+        badgeText: 'Sedang Dikerjakan',
+        badgeClass: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/40 dark:border-amber-900/30 border-dashed animate-pulse font-bold',
+        buttonText: 'Lanjutkan Ujian',
+        actionType: 'resume' as const,
+        session: inProgressSession,
+      };
+    }
 
     if (now < startDate) {
       return {
         isActive: false,
         badgeText: 'Belum Mulai',
-        badgeClass: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/40 dark:border-amber-900/30',
+        badgeClass: 'bg-zinc-100 text-zinc-550 dark:bg-zinc-800/60 dark:text-zinc-400 border border-zinc-200/40 dark:border-zinc-800/30',
         buttonText: 'Belum Waktunya',
+        actionType: 'disabled' as const,
+        session: null,
       };
     }
 
@@ -98,6 +130,8 @@ export default function DashboardPage() {
         badgeText: 'Kedaluwarsa',
         badgeClass: 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800/60 dark:text-zinc-400 border border-zinc-200/40 dark:border-zinc-800/30',
         buttonText: 'Sudah Selesai',
+        actionType: 'disabled' as const,
+        session: null,
       };
     }
 
@@ -106,6 +140,8 @@ export default function DashboardPage() {
       badgeText: 'Aktif',
       badgeClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-900/30',
       buttonText: 'Mulai Ujian',
+      actionType: 'start' as const,
+      session: null,
     };
   };
 
@@ -131,8 +167,9 @@ export default function DashboardPage() {
   };
 
   const handleOpenStartModal = (assessment: Assessment) => {
-    const status = getExamStatus(assessment.start_date, assessment.end_date);
-    if (!status.isActive) {
+    const status = getExamStatus(assessment);
+    
+    if (status.actionType === 'disabled') {
       addToast({
         type: 'warning',
         title: 'Akses Dibatasi',
@@ -140,6 +177,17 @@ export default function DashboardPage() {
       });
       return;
     }
+
+    if (status.actionType === 'resume' && status.session) {
+      router.push(`/exam/${status.session.id}`);
+      return;
+    }
+
+    if (status.actionType === 'result' && status.session) {
+      router.push(`/exam/${status.session.id}/result`);
+      return;
+    }
+
     setSelectedAssessment(assessment);
     setIsStartModalOpen(true);
   };
@@ -260,7 +308,7 @@ export default function DashboardPage() {
           ) : (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {assessments.map((assessment) => {
-                const status = getExamStatus(assessment.start_date, assessment.end_date);
+                const status = getExamStatus(assessment);
                 return (
                   <Card 
                     key={assessment.id} 
@@ -319,9 +367,13 @@ export default function DashboardPage() {
                       <Button
                         onClick={() => handleOpenStartModal(assessment)}
                         className={`w-full justify-center group py-2.5 font-bold transition-all duration-300 rounded-xl cursor-pointer ${
-                          status.isActive 
-                            ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/10 hover:shadow-lg hover:shadow-blue-500/20' 
-                            : 'bg-zinc-100 text-zinc-400 border border-zinc-200/50 dark:bg-zinc-800/50 dark:text-zinc-500 dark:border-zinc-850'
+                          !status.isActive
+                            ? 'bg-zinc-100 text-zinc-400 border border-zinc-200/50 dark:bg-zinc-800/50 dark:text-zinc-500 dark:border-zinc-850'
+                            : status.actionType === 'result'
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-md shadow-emerald-500/10 hover:shadow-lg hover:shadow-emerald-500/20'
+                            : status.actionType === 'resume'
+                            ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-md shadow-amber-500/10 hover:shadow-lg hover:shadow-amber-500/20'
+                            : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md shadow-blue-500/10 hover:shadow-lg hover:shadow-blue-500/20'
                         }`}
                         disabled={!status.isActive}
                       >
