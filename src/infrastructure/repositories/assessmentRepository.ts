@@ -268,4 +268,10 @@ export const assessmentRepository = {
   async bulkDeleteAssessmentSessions(sessionIds: string[]): Promise<void> {
     await api.post('/sessions/bulk-delete', { session_ids: sessionIds });
   },
+  async unlockAssessmentSession(sessionId: string): Promise<void> {
+    await api.post(`/sessions/${sessionId}/unlock`);
+  },
+  async forceSubmitAssessmentSession(sessionId: string): Promise<void> {
+    await api.post(`/sessions/${sessionId}/force-submit`);
+  },
 };

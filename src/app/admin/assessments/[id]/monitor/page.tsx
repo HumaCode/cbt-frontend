@@ -25,7 +25,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Share2,
-  Trash2
+  Trash2,
+  Lock,
+  Unlock
 } from 'lucide-react';
 
 interface PageProps {
@@ -55,6 +57,12 @@ export default function MonitorPage({ params }: PageProps) {
   const [targetSessionId, setTargetSessionId] = useState<string | null>(null);
   const [targetSessionName, setTargetSessionName] = useState<string | null>(null);
   const [isDeletingSession, setIsDeletingSession] = useState(false);
+
+  // Custom violation log inspector states
+  const [isViolationLogsOpen, setIsViolationLogsOpen] = useState(false);
+  const [violationLogs, setViolationLogs] = useState<any[]>([]);
+  const [loadingViolationLogs, setLoadingViolationLogs] = useState(false);
+  const [targetViolationParticipantName, setTargetViolationParticipantName] = useState('');
 
   // Load page from URL query string on mount
   useEffect(() => {
@@ -273,6 +281,75 @@ export default function MonitorPage({ params }: PageProps) {
       });
     } finally {
       setIsDeletingSession(false);
+    }
+  };
+
+  const handleUnlockSession = async (sessionId: string, userName: string) => {
+    if (!window.confirm(`Apakah Anda yakin ingin membuka kunci sesi ujian peserta "${userName}"?\nStatus ujian akan dikembalikan menjadi 'Mengerjakan' dan peserta dapat melanjutkan kembali.`)) {
+      return;
+    }
+
+    try {
+      await assessmentRepository.unlockAssessmentSession(sessionId);
+      addToast({
+        type: 'success',
+        title: 'Sesi Dibuka Kunci',
+        message: `Sesi ujian ${userName} berhasil dibuka kunci.`,
+      });
+      // Refresh page data
+      fetchData(true);
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Membuka Kunci Sesi',
+        message: err.response?.data?.message || 'Terjadi kesalahan saat membuka kunci sesi.',
+      });
+    }
+  };
+
+  const handleForceSubmitSession = async (sessionId: string, userName: string) => {
+    if (!window.confirm(`Apakah Anda yakin ingin memaksa pengumpulan jawaban peserta "${userName}"?\nSesi ujian peserta tersebut akan diselesaikan secara paksa.`)) {
+      return;
+    }
+
+    try {
+      await assessmentRepository.forceSubmitAssessmentSession(sessionId);
+      addToast({
+        type: 'success',
+        title: 'Berhasil Mengumpulkan',
+        message: `Sesi ujian ${userName} berhasil diselesaikan secara paksa.`,
+      });
+      // Refresh page data
+      fetchData(true);
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Mengumpulkan Sesi',
+        message: err.response?.data?.message || 'Terjadi kesalahan saat memaksa pengumpulan sesi.',
+      });
+    }
+  };
+
+  const handleViewViolationLogs = async (sessionId: string, userName: string) => {
+    setTargetViolationParticipantName(userName);
+    setIsViolationLogsOpen(true);
+    setLoadingViolationLogs(true);
+    setViolationLogs([]);
+
+    try {
+      const logs = await assessmentRepository.getProctorLogs(sessionId);
+      setViolationLogs(logs || []);
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Memuat Log Pelanggaran',
+        message: err.response?.data?.message || 'Tidak dapat memuat log proctoring.',
+      });
+    } finally {
+      setLoadingViolationLogs(false);
     }
   };
 
@@ -554,10 +631,14 @@ export default function MonitorPage({ params }: PageProps) {
                       {/* Cheat Warnings */}
                       <td className="py-4 px-4 text-center">
                         {warningLogsCount > 0 ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 font-extrabold text-xs border border-rose-500/10">
+                          <button
+                            onClick={() => handleViewViolationLogs(session.id, session.user?.name || 'Peserta')}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 font-extrabold text-[10px] border border-rose-500/10 hover:bg-rose-500/25 transition-all cursor-pointer"
+                            title="Klik untuk melihat detail log pelanggaran"
+                          >
                             <AlertTriangle className="h-3.5 w-3.5" />
                             <span>{warningLogsCount} Pelanggaran</span>
-                          </div>
+                          </button>
                         ) : (
                           <span className="text-xs text-zinc-400 font-semibold">Aman (0)</span>
                         )}
@@ -579,13 +660,33 @@ export default function MonitorPage({ params }: PageProps) {
 
                       {/* Actions */}
                       <td className="py-4 px-4 text-center">
-                        <button
-                          onClick={() => handleDeleteSingle(session.id, session.user?.name || 'Peserta')}
-                          className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer"
-                          title="Hapus Sesi Ujian"
-                        >
-                          <Trash2 className="h-4.5 w-4.5" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1">
+                          {isFinished && (
+                            <button
+                              onClick={() => handleUnlockSession(session.id, session.user?.name || 'Peserta')}
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all cursor-pointer"
+                              title="Buka Kunci / Lanjutkan Sesi Ujian"
+                            >
+                              <Unlock className="h-4 w-4" />
+                            </button>
+                          )}
+                          {isTimerActive && (
+                            <button
+                              onClick={() => handleForceSubmitSession(session.id, session.user?.name || 'Peserta')}
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20 transition-all cursor-pointer"
+                              title="Paksa Kumpul Jawaban"
+                            >
+                              <Lock className="h-4 w-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDeleteSingle(session.id, session.user?.name || 'Peserta')}
+                            className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer"
+                            title="Hapus Sesi Ujian"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -686,6 +787,73 @@ export default function MonitorPage({ params }: PageProps) {
               className="bg-red-600 hover:bg-red-500 text-white cursor-pointer font-bold"
             >
               {isDeletingSession ? 'Menghapus...' : 'Ya, Hapus'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Custom Violation Log Inspector Modal */}
+      <Modal
+        isOpen={isViolationLogsOpen}
+        onClose={() => setIsViolationLogsOpen(false)}
+        title={`Log Pelanggaran: ${targetViolationParticipantName}`}
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+            Berikut adalah riwayat aktivitas mencurigakan yang terdeteksi oleh sistem selama peserta mengerjakan ujian.
+          </p>
+
+          {loadingViolationLogs ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-2">
+              <RefreshCw className="h-6 w-6 animate-spin text-blue-600" />
+              <span className="text-xs text-zinc-500 font-bold">Memuat log...</span>
+            </div>
+          ) : violationLogs.length === 0 ? (
+            <div className="text-center py-8 text-zinc-400 text-xs font-semibold">
+              Tidak ada detail log pelanggaran yang tercatat.
+            </div>
+          ) : (
+            <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
+              <table className="min-w-full divide-y divide-zinc-200 dark:divide-zinc-800 text-left">
+                <thead className="bg-zinc-50 dark:bg-zinc-900/50 text-[10px] uppercase font-bold text-zinc-500 tracking-wider">
+                  <tr>
+                    <th className="py-2 px-3">Waktu</th>
+                    <th className="py-2 px-3">Kejadian</th>
+                    <th className="py-2 px-3">Keterangan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 dark:divide-zinc-850 text-xs text-zinc-700 dark:text-zinc-300">
+                  {violationLogs.map((log) => {
+                    let eventLabel = log.event_type || 'Pelanggaran';
+                    if (log.event_type === 'fullscreen_exit') eventLabel = 'Keluar Layar Penuh';
+                    if (log.event_type === 'tab_blur' || log.event_type === 'visibility_change') eventLabel = 'Pindah Tab';
+
+                    return (
+                      <tr key={log.id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/30">
+                        <td className="py-2 px-3 whitespace-nowrap text-zinc-400 dark:text-zinc-500 font-medium">
+                          {log.created_at ? new Date(log.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '-'}
+                        </td>
+                        <td className="py-2 px-3 font-semibold text-rose-600 dark:text-rose-455">
+                          {eventLabel}
+                        </td>
+                        <td className="py-2 px-3 text-zinc-550 dark:text-zinc-400">
+                          {log.event_details || '-'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2">
+            <Button
+              onClick={() => setIsViolationLogsOpen(false)}
+              className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 cursor-pointer font-bold py-1.5 px-4 rounded-lg text-xs"
+            >
+              Tutup
             </Button>
           </div>
         </div>
