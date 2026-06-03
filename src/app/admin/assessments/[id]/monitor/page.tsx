@@ -23,7 +23,8 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
-  Share2
+  Share2,
+  Trash2
 } from 'lucide-react';
 
 interface PageProps {
@@ -42,6 +43,10 @@ export default function MonitorPage({ params }: PageProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Selection and deletion states
+  const [selectedSessionIds, setSelectedSessionIds] = useState<string[]>([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Load page from URL query string on mount
   useEffect(() => {
@@ -169,6 +174,90 @@ export default function MonitorPage({ params }: PageProps) {
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedSessions = filteredSessions.slice(startIndex, endIndex);
 
+  const handleSelectRowToggle = (sessionId: string) => {
+    setSelectedSessionIds(prev => 
+      prev.includes(sessionId) 
+        ? prev.filter(id => id !== sessionId) 
+        : [...prev, sessionId]
+    );
+  };
+
+  const handleSelectAllToggle = () => {
+    const paginatedIds = paginatedSessions.map(s => s.id);
+    const allSelectedOnPage = paginatedIds.every(id => selectedSessionIds.includes(id));
+
+    if (allSelectedOnPage) {
+      // Deselect all on this page
+      setSelectedSessionIds(prev => prev.filter(id => !paginatedIds.includes(id)));
+    } else {
+      // Select all on this page
+      setSelectedSessionIds(prev => {
+        const newSelection = [...prev];
+        paginatedIds.forEach(id => {
+          if (!newSelection.includes(id)) {
+            newSelection.push(id);
+          }
+        });
+        return newSelection;
+      });
+    }
+  };
+
+  const handleDeleteSingle = async (sessionId: string, userName: string) => {
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus sesi ujian untuk peserta "${userName}"?\nTindakan ini akan menghapus semua riwayat jawaban dan log kecurangan peserta tersebut secara permanen.`)) {
+      return;
+    }
+
+    try {
+      await assessmentRepository.deleteAssessmentSession(sessionId);
+      addToast({
+        type: 'success',
+        title: 'Sesi Dihapus',
+        message: `Sesi ujian ${userName} berhasil dihapus.`,
+      });
+      // Filter out deleted session
+      setSessions(prev => prev.filter(s => s.id !== sessionId));
+      setSelectedSessionIds(prev => prev.filter(id => id !== sessionId));
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Menghapus Sesi',
+        message: err.response?.data?.message || 'Terjadi kesalahan saat menghapus sesi.',
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedSessionIds.length === 0) return;
+    
+    if (!window.confirm(`Apakah Anda yakin ingin menghapus ${selectedSessionIds.length} sesi ujian yang terpilih?\nTindakan ini akan menghapus semua riwayat jawaban dan log kecurangan dari seluruh sesi yang dipilih secara permanen.`)) {
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    try {
+      await assessmentRepository.bulkDeleteAssessmentSessions(selectedSessionIds);
+      addToast({
+        type: 'success',
+        title: 'Sesi Masal Dihapus',
+        message: `${selectedSessionIds.length} sesi ujian terpilih berhasil dihapus.`,
+      });
+      // Filter out deleted sessions
+      setSessions(prev => prev.filter(s => !selectedSessionIds.includes(s.id)));
+      setSelectedSessionIds([]);
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Menghapus Sesi',
+        message: err.response?.data?.message || 'Terjadi kesalahan saat menghapus sesi masal.',
+      });
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       {/* Header Panel */}
@@ -293,7 +382,7 @@ export default function MonitorPage({ params }: PageProps) {
       {/* Filter and Table Panel */}
       <Card className="p-0 overflow-hidden bg-white dark:bg-zinc-900/30">
         {/* Search Bar */}
-        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex items-center gap-3">
+        <div className="p-4 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
             <input
@@ -304,6 +393,16 @@ export default function MonitorPage({ params }: PageProps) {
               className="w-full pl-10 pr-4 py-2 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white outline-none text-sm"
             />
           </div>
+          {selectedSessionIds.length > 0 && (
+            <Button
+              onClick={handleBulkDelete}
+              isLoading={isBulkDeleting}
+              className="bg-red-600 hover:bg-red-500 text-white flex items-center justify-center gap-1.5 cursor-pointer py-2 px-4 rounded-xl text-sm"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span>Hapus Terpilih ({selectedSessionIds.length})</span>
+            </Button>
+          )}
         </div>
 
         {/* Participant list Table */}
@@ -318,12 +417,21 @@ export default function MonitorPage({ params }: PageProps) {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-zinc-50/50 dark:bg-zinc-900/50 text-[10px] font-bold text-zinc-400 uppercase tracking-wider border-b border-zinc-200 dark:border-zinc-800">
+                  <th className="py-3.5 px-4 w-12 text-center">
+                    <input
+                      type="checkbox"
+                      checked={paginatedSessions.length > 0 && paginatedSessions.every(s => selectedSessionIds.includes(s.id))}
+                      onChange={handleSelectAllToggle}
+                      className="h-4 w-4 rounded border-zinc-300 text-blue-600 cursor-pointer"
+                    />
+                  </th>
                   <th className="py-3.5 px-4 text-center w-12">No</th>
                   <th className="py-3.5 px-4 min-w-[200px]">Nama Peserta</th>
                   <th className="py-3.5 px-4 w-44 text-center">Status</th>
                   <th className="py-3.5 px-4 w-48">Kemajuan Soal (Progress)</th>
                   <th className="py-3.5 px-4 w-40 text-center">Pelanggaran Layar</th>
                   <th className="py-3.5 px-4 w-32 text-center">Nilai</th>
+                  <th className="py-3.5 px-4 w-20 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800 text-sm">
@@ -347,6 +455,16 @@ export default function MonitorPage({ params }: PageProps) {
                       key={session.id} 
                       className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/10 transition-colors duration-150"
                     >
+                      {/* Selection checkbox */}
+                      <td className="py-4 px-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedSessionIds.includes(session.id)}
+                          onChange={() => handleSelectRowToggle(session.id)}
+                          className="h-4 w-4 rounded border-zinc-300 text-blue-600 cursor-pointer"
+                        />
+                      </td>
+
                       {/* No */}
                       <td className="py-4 px-4 text-center text-zinc-400 font-bold">{startIndex + idx + 1}</td>
                       
@@ -431,6 +549,17 @@ export default function MonitorPage({ params }: PageProps) {
                         ) : (
                           <span className="text-zinc-400 font-semibold text-xs">-</span>
                         )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-4 px-4 text-center">
+                        <button
+                          onClick={() => handleDeleteSingle(session.id, session.user?.name || 'Peserta')}
+                          className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer"
+                          title="Hapus Sesi Ujian"
+                        >
+                          <Trash2 className="h-4.5 w-4.5" />
+                        </button>
                       </td>
                     </tr>
                   );

@@ -262,4 +262,10 @@ export const assessmentRepository = {
     const response = await api.get(`/public/assessments/${id}/monitor`);
     return response.data.data;
   },
+  async deleteAssessmentSession(sessionId: string): Promise<void> {
+    await api.delete(`/sessions/${sessionId}`);
+  },
+  async bulkDeleteAssessmentSessions(sessionIds: string[]): Promise<void> {
+    await api.post('/sessions/bulk-delete', { session_ids: sessionIds });
+  },
 };
