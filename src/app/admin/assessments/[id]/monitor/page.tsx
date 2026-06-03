@@ -27,7 +27,8 @@ import {
   Share2,
   Trash2,
   Lock,
-  Unlock
+  Unlock,
+  Download
 } from 'lucide-react';
 
 interface PageProps {
@@ -63,6 +64,9 @@ export default function MonitorPage({ params }: PageProps) {
   const [violationLogs, setViolationLogs] = useState<any[]>([]);
   const [loadingViolationLogs, setLoadingViolationLogs] = useState(false);
   const [targetViolationParticipantName, setTargetViolationParticipantName] = useState('');
+
+  // Export states
+  const [isExporting, setIsExporting] = useState(false);
 
   // Load page from URL query string on mount
   useEffect(() => {
@@ -353,6 +357,36 @@ export default function MonitorPage({ params }: PageProps) {
     }
   };
 
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const blob = await assessmentRepository.exportAssessmentSessions(id);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rekap_nilai_${assessment ? assessment.title.toLowerCase().replace(/\s+/g, '_') : 'ujian'}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      
+      addToast({
+        type: 'success',
+        title: 'Ekspor Berhasil',
+        message: 'Laporan rekapitulasi nilai berhasil diunduh.',
+      });
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Mengekspor Laporan',
+        message: err.response?.data?.message || 'Terjadi kesalahan saat memproses ekspor laporan.',
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       {/* Header Panel */}
@@ -418,6 +452,17 @@ export default function MonitorPage({ params }: PageProps) {
             >
               <Share2 className="h-3.5 w-3.5" />
               <span>Monitor Publik</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCsv}
+              isLoading={isExporting}
+              className="flex items-center gap-1.5 border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 font-bold text-xs py-1.5 px-3 rounded-lg hover:text-emerald-600 dark:hover:text-emerald-450 hover:border-emerald-500/30 hover:bg-emerald-50/15 cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Ekspor CSV</span>
             </Button>
           </div>
         </div>

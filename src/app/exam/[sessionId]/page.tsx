@@ -139,18 +139,33 @@ export default function ExamPage({ params }: PageProps) {
     document.addEventListener('cut', preventDefaults);
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      const keyLower = e.key.toLowerCase();
+      const isCopyPasteShortcut = 
+        (e.ctrlKey && (keyLower === 'c' || keyLower === 'v' || keyLower === 'x')) ||
+        (e.metaKey && (keyLower === 'c' || keyLower === 'v' || keyLower === 'x'));
+
       if (
         e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
-        (e.ctrlKey && e.key === 'u') ||
-        (e.ctrlKey && e.key === 's')
+        (e.ctrlKey && e.shiftKey && (keyLower === 'i' || keyLower === 'j')) ||
+        (e.ctrlKey && keyLower === 'u') ||
+        (e.ctrlKey && keyLower === 's') ||
+        isCopyPasteShortcut
       ) {
         e.preventDefault();
-        incrementWarning('unauthorized_action', `Mencoba menekan pintasan keyboard: ${e.key}`);
+        
+        let reason = `Mencoba menekan pintasan keyboard: ${e.key}`;
+        let toastMsg = 'Dilarang membuka fitur Developer Tools atau menyimpan halaman.';
+        
+        if (isCopyPasteShortcut) {
+          reason = 'Mencoba menyalin/menempel teks (Copy-Paste shortcut)';
+          toastMsg = 'Dilarang melakukan salin-tempel (copy-paste) teks selama ujian!';
+        }
+
+        incrementWarning('unauthorized_action', reason);
         addToast({
           type: 'error',
-          title: 'Pintasan Dilarang',
-          message: 'Dilarang membuka fitur Developer Tools atau menyimpan halaman.',
+          title: 'Aksi Dilarang',
+          message: toastMsg,
         });
       }
     };

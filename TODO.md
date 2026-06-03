@@ -16,13 +16,13 @@ Berikut adalah daftar tugas untuk melengkapi Portal CBT menjadi sistem ujian yan
 ---
 
 ## 🟡 Prioritas Sedang (Operasional & UX)
-- [ ] **Ekspor Laporan Nilai Ujian (Excel/PDF)**
-  - [ ] Buat tombol ekspor rekapitulasi nilai ujian per jadwal di halaman monitor.
-  - [ ] Implementasikan library ekspor (misal: laravel-excel di backend) untuk format file `.xlsx` / `.pdf`.
-- [ ] **Pembatasan Copy-Paste & Klik Kanan**
-  - [ ] Tambahkan pencegahan event klik kanan (`contextmenu`) dan tombol pintasan salin (`ctrl+c` / `cmd+c`) pada halaman pengerjaan ujian peserta.
-- [ ] **Mode Layar Penuh Wajib (Strict Fullscreen Mode)**
-  - [ ] Terapkan validasi layar penuh saat ujian berlangsung. Sesi ujian hanya dapat diakses saat browser berada pada mode layar penuh.
+- [x] **Ekspor Laporan Nilai Ujian (Excel/PDF)**
+  - [x] Buat tombol ekspor rekapitulasi nilai ujian per jadwal di halaman monitor.
+  - [x] Implementasikan library ekspor (misal: laravel-excel di backend) untuk format file `.xlsx` / `.pdf`.
+- [x] **Pembatasan Copy-Paste & Klik Kanan**
+  - [x] Tambahkan pencegahan event klik kanan (`contextmenu`) dan tombol pintasan salin (`ctrl+c` / `cmd+c`) pada halaman pengerjaan ujian peserta.
+- [x] **Mode Layar Penuh Wajib (Strict Fullscreen Mode)**
+  - [x] Terapkan validasi layar penuh saat ujian berlangsung. Sesi ujian hanya dapat diakses saat browser berada pada mode layar penuh.
 
 ---
 

@@ -274,4 +274,10 @@ export const assessmentRepository = {
   async forceSubmitAssessmentSession(sessionId: string): Promise<void> {
     await api.post(`/sessions/${sessionId}/force-submit`);
   },
+  async exportAssessmentSessions(id: string): Promise<Blob> {
+    const response = await api.get(`/assessments/${id}/export-sessions`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  },
 };
