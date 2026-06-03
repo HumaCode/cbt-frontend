@@ -40,6 +40,7 @@ export default function DashboardPage() {
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
   const [isStartingExam, setIsStartingExam] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +66,7 @@ export default function DashboardPage() {
   }, [addToast]);
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await authRepository.logout();
       addToast({
@@ -75,6 +77,7 @@ export default function DashboardPage() {
       router.push('/login');
     } catch (err: any) {
       console.error(err);
+      setIsLoggingOut(false);
       addToast({
         type: 'error',
         title: 'Logout Gagal',
@@ -296,16 +299,18 @@ export default function DashboardPage() {
           <div className="flex justify-end gap-3 pt-2">
             <Button
               variant="outline"
-              onClick={() => setIsLogoutModalOpen(false)}
+              onClick={() => !isLoggingOut && setIsLogoutModalOpen(false)}
               className="cursor-pointer"
+              disabled={isLoggingOut}
             >
               Batal
             </Button>
             <Button
               onClick={handleLogout}
+              isLoading={isLoggingOut}
               className="bg-red-600 hover:bg-red-500 text-white cursor-pointer"
             >
-              Keluar
+              {isLoggingOut ? 'Sedang proses...' : 'Keluar'}
             </Button>
           </div>
         </div>

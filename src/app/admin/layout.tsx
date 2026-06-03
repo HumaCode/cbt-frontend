@@ -30,6 +30,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -55,6 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [router, addToast]);
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await authRepository.logout();
       addToast({
@@ -65,6 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       router.push('/login');
     } catch (err) {
       console.error(err);
+      setIsLoggingOut(false);
     }
   };
 
@@ -242,16 +245,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex justify-end gap-3 pt-2">
             <Button
               variant="outline"
-              onClick={() => setIsLogoutModalOpen(false)}
+              onClick={() => !isLoggingOut && setIsLogoutModalOpen(false)}
               className="cursor-pointer"
+              disabled={isLoggingOut}
             >
               Batal
             </Button>
             <Button
               onClick={handleLogout}
+              isLoading={isLoggingOut}
               className="bg-red-600 hover:bg-red-500 text-white cursor-pointer"
             >
-              Keluar
+              {isLoggingOut ? 'Sedang proses...' : 'Keluar'}
             </Button>
           </div>
         </div>
