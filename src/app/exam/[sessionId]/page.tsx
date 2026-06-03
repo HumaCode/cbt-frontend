@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useExamStore } from '@/application/useExamStore';
 import { useTimer } from '@/application/useTimer';
 import { useToastStore } from '@/presentation/components/Toast';
+import { getMediaUrl } from '@/infrastructure/api';
 import { Button } from '@/presentation/components/Button';
 import { Card } from '@/presentation/components/Card';
 import { Modal } from '@/presentation/components/Modal';
@@ -24,12 +25,6 @@ interface PageProps {
   params: Promise<{ sessionId: string }>;
 }
 
-const getMediaUrl = (url?: string) => {
-  if (!url) return '';
-  if (url.startsWith('http')) return url;
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  return `${baseUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
-};
 
 export default function ExamPage({ params }: PageProps) {
   const router = useRouter();

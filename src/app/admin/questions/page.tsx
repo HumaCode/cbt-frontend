@@ -10,13 +10,7 @@ import { Input } from '@/presentation/components/Input';
 import { useToastStore } from '@/presentation/components/Toast';
 import { Plus, Edit2, Trash2, HelpCircle, Check, X, Layers, ArrowLeft, Folder } from 'lucide-react';
 import { Spinner } from '@/presentation/components/Spinner';
-
-const getMediaUrl = (url?: string) => {
-  if (!url) return '';
-  if (url.startsWith('http')) return url;
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-  return `${baseUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
-};
+import { getMediaUrl } from '@/infrastructure/api';
 
 export default function QuestionsPage() {
   const addToast = useToastStore((state) => state.addToast);
