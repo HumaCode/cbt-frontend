@@ -7,7 +7,7 @@ import { Input } from '@/presentation/components/Input';
 import { Button } from '@/presentation/components/Button';
 import { Card } from '@/presentation/components/Card';
 import { useToastStore } from '@/presentation/components/Toast';
-import { KeyRound, Mail, GraduationCap } from 'lucide-react';
+import { KeyRound, Mail, GraduationCap, Eye, EyeOff } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -16,6 +16,7 @@ function LoginForm() {
 
   const [loginInput, setLoginInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -69,11 +70,11 @@ function LoginForm() {
   };
 
   return (
-    <Card className="border-white/5 bg-zinc-900/50 p-8 shadow-2xl backdrop-blur-xl">
+    <Card className="border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/30 p-8 shadow-xl shadow-zinc-200/30 dark:shadow-none backdrop-blur-xl rounded-3xl">
       <form className="space-y-6" onSubmit={handleLogin}>
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 mt-6">
-            <Mail className="h-5 w-5" />
+          <div className="absolute top-[34px] left-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
+            <Mail className="h-4.5 w-4.5" />
           </div>
           <Input
             label="Email atau Username"
@@ -82,25 +83,33 @@ function LoginForm() {
             value={loginInput}
             onChange={(e) => setLoginInput(e.target.value)}
             error={errors.login}
-            className="pl-10 text-white placeholder-zinc-500 border-zinc-700/50 focus:border-blue-500"
+            className="pl-10 border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
             disabled={isLoading}
           />
         </div>
 
         <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-500 mt-6">
-            <KeyRound className="h-5 w-5" />
+          <div className="absolute top-[34px] left-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
+            <KeyRound className="h-4.5 w-4.5" />
           </div>
           <Input
             label="Kata Sandi"
             placeholder="••••••••"
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={passwordInput}
             onChange={(e) => setPasswordInput(e.target.value)}
             error={errors.password}
-            className="pl-10 text-white placeholder-zinc-500 border-zinc-700/50 focus:border-blue-500"
+            className="pl-10 pr-10 border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
             disabled={isLoading}
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute top-[34px] right-3.5 flex items-center text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer"
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+          </button>
         </div>
 
         <div className="flex items-center justify-between text-sm">
@@ -109,13 +118,13 @@ function LoginForm() {
               id="remember-me"
               name="remember-me"
               type="checkbox"
-              className="h-4 w-4 rounded border-zinc-700 bg-zinc-800 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-blue-650 focus:ring-blue-500 cursor-pointer"
             />
-            <label htmlFor="remember-me" className="ml-2 block text-zinc-400">
+            <label htmlFor="remember-me" className="ml-2 block text-zinc-600 dark:text-zinc-400 cursor-pointer font-medium">
               Ingat saya
             </label>
           </div>
-          <a href="#" className="font-medium text-blue-400 hover:text-blue-300">
+          <a href="#" className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
             Lupa sandi?
           </a>
         </div>
@@ -123,15 +132,15 @@ function LoginForm() {
         <Button
           type="submit"
           isLoading={isLoading}
-          className="w-full justify-center bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-3 rounded-xl shadow-lg shadow-blue-500/20"
+          className="w-full justify-center bg-gradient-to-r from-blue-650 to-indigo-650 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl shadow-lg shadow-blue-500/10 cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0"
         >
           Masuk Sekarang
         </Button>
       </form>
 
-      <div className="mt-6 text-center text-sm text-zinc-400">
+      <div className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
         Belum terdaftar?{' '}
-        <a href="/register" className="font-medium text-blue-400 hover:text-blue-300">
+        <a href="/register" className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
           Buat akun baru
         </a>
       </div>
@@ -141,28 +150,28 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-tr from-slate-900 via-indigo-950 to-zinc-900 px-4 py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 px-4 py-12 sm:px-6 lg:px-8 relative overflow-hidden transition-colors duration-300">
       {/* Background Orbs */}
-      <div className="absolute top-1/4 left-1/4 -z-10 h-72 w-72 rounded-full bg-blue-600/10 blur-3xl animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 -z-10 h-80 w-80 rounded-full bg-indigo-600/15 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/5 dark:bg-blue-600/10 blur-[100px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-indigo-600/5 dark:bg-indigo-600/10 blur-[120px] pointer-events-none" />
 
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-8 relative z-10">
         <div className="flex flex-col items-center text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600/20 text-blue-400 border border-blue-500/20 shadow-inner">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-500/20 shadow-md">
             <GraduationCap className="h-8 w-8" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-white">
+          <h2 className="mt-6 text-3xl font-extrabold tracking-tight text-zinc-900 dark:text-white">
             Portal Ujian CBT
           </h2>
-          <p className="mt-2 text-sm text-zinc-400">
+          <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
             Masuk untuk memulai pengerjaan ujian Anda
           </p>
         </div>
 
         <Suspense fallback={
-          <Card className="border-white/5 bg-zinc-900/50 p-8 shadow-2xl backdrop-blur-xl flex flex-col items-center justify-center min-h-[300px]">
+          <Card className="border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/30 p-8 shadow-2xl backdrop-blur-xl flex flex-col items-center justify-center min-h-[300px]">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-            <p className="text-zinc-400 text-xs mt-3">Memuat form login...</p>
+            <p className="text-zinc-500 dark:text-zinc-400 text-xs mt-3">Memuat form login...</p>
           </Card>
         }>
           <LoginForm />
