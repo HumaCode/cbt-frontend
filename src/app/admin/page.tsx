@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { assessmentRepository } from '@/infrastructure/repositories/assessmentRepository';
+import { Spinner } from '@/presentation/components/Spinner';
 import { Card } from '@/presentation/components/Card';
 import { FolderKanban, HelpCircle, BookOpen, UserCheck, Shield } from 'lucide-react';
 
@@ -38,10 +39,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 font-medium">Memuat Statistik...</p>
-        </div>
+        <Spinner label="Memuat Statistik..." />
       </div>
     );
   }

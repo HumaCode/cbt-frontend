@@ -24,6 +24,8 @@ import {
   LayoutDashboard
 } from 'lucide-react';
 
+import { Spinner } from '@/presentation/components/Spinner';
+
 export default function DashboardPage() {
   const router = useRouter();
   const addToast = useToastStore((state) => state.addToast);
@@ -111,11 +113,13 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Memuat Portal CBT...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-zinc-950 relative overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/5 dark:bg-blue-600/10 blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[45%] h-[45%] rounded-full bg-indigo-600/5 dark:bg-indigo-600/10 blur-[120px] pointer-events-none" />
+        
+        <Card className="border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/30 p-8 shadow-xl shadow-zinc-200/30 dark:shadow-none backdrop-blur-xl rounded-3xl max-w-xs w-full text-center">
+          <Spinner label="Memuat Portal CBT..." />
+        </Card>
       </div>
     );
   }
