@@ -83,6 +83,13 @@ export default function MonitorPage({ params }: PageProps) {
   const [savingGrading, setSavingGrading] = useState<{ [questionId: string]: boolean }>({});
   const [scoresInput, setScoresInput] = useState<{ [questionId: string]: string }>({});
 
+  // Custom Action Confirmation Modal states
+  const [isActionConfirmOpen, setIsActionConfirmOpen] = useState(false);
+  const [actionConfirmTitle, setActionConfirmTitle] = useState('');
+  const [actionConfirmMessage, setActionConfirmMessage] = useState('');
+  const [actionConfirmCallback, setActionConfirmCallback] = useState<(() => void) | null>(null);
+  const [isActionExecuting, setIsActionExecuting] = useState(false);
+
   // Load page from URL query string on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -303,52 +310,60 @@ export default function MonitorPage({ params }: PageProps) {
     }
   };
 
-  const handleUnlockSession = async (sessionId: string, userName: string) => {
-    if (!window.confirm(`Apakah Anda yakin ingin membuka kunci sesi ujian peserta "${userName}"?\nStatus ujian akan dikembalikan menjadi 'Mengerjakan' dan peserta dapat melanjutkan kembali.`)) {
-      return;
-    }
-
-    try {
-      await assessmentRepository.unlockAssessmentSession(sessionId);
-      addToast({
-        type: 'success',
-        title: 'Sesi Dibuka Kunci',
-        message: `Sesi ujian ${userName} berhasil dibuka kunci.`,
-      });
-      // Refresh page data
-      fetchData(true);
-    } catch (err: any) {
-      console.error(err);
-      addToast({
-        type: 'error',
-        title: 'Gagal Membuka Kunci Sesi',
-        message: err.response?.data?.message || 'Terjadi kesalahan saat membuka kunci sesi.',
-      });
-    }
+  const handleUnlockSession = (sessionId: string, userName: string) => {
+    setActionConfirmTitle('Buka Kunci Sesi Ujian');
+    setActionConfirmMessage(`Apakah Anda yakin ingin membuka kunci sesi ujian peserta "${userName}"?\nStatus ujian akan dikembalikan menjadi 'Mengerjakan' dan peserta dapat melanjutkan kembali.`);
+    setActionConfirmCallback(() => async () => {
+      setIsActionExecuting(true);
+      try {
+        await assessmentRepository.unlockAssessmentSession(sessionId);
+        addToast({
+          type: 'success',
+          title: 'Sesi Dibuka Kunci',
+          message: `Sesi ujian ${userName} berhasil dibuka kunci.`,
+        });
+        fetchData(true);
+      } catch (err: any) {
+        console.error(err);
+        addToast({
+          type: 'error',
+          title: 'Gagal Membuka Kunci Sesi',
+          message: err.response?.data?.message || 'Terjadi kesalahan saat membuka kunci sesi.',
+        });
+      } finally {
+        setIsActionExecuting(false);
+        setIsActionConfirmOpen(false);
+      }
+    });
+    setIsActionConfirmOpen(true);
   };
 
-  const handleForceSubmitSession = async (sessionId: string, userName: string) => {
-    if (!window.confirm(`Apakah Anda yakin ingin memaksa pengumpulan jawaban peserta "${userName}"?\nSesi ujian peserta tersebut akan diselesaikan secara paksa.`)) {
-      return;
-    }
-
-    try {
-      await assessmentRepository.forceSubmitAssessmentSession(sessionId);
-      addToast({
-        type: 'success',
-        title: 'Berhasil Mengumpulkan',
-        message: `Sesi ujian ${userName} berhasil diselesaikan secara paksa.`,
-      });
-      // Refresh page data
-      fetchData(true);
-    } catch (err: any) {
-      console.error(err);
-      addToast({
-        type: 'error',
-        title: 'Gagal Mengumpulkan Sesi',
-        message: err.response?.data?.message || 'Terjadi kesalahan saat memaksa pengumpulan sesi.',
-      });
-    }
+  const handleForceSubmitSession = (sessionId: string, userName: string) => {
+    setActionConfirmTitle('Paksa Kumpul Ujian');
+    setActionConfirmMessage(`Apakah Anda yakin ingin memaksa pengumpulan jawaban peserta "${userName}"?\nSesi ujian peserta tersebut akan diselesaikan secara paksa.`);
+    setActionConfirmCallback(() => async () => {
+      setIsActionExecuting(true);
+      try {
+        await assessmentRepository.forceSubmitAssessmentSession(sessionId);
+        addToast({
+          type: 'success',
+          title: 'Berhasil Mengumpulkan',
+          message: `Sesi ujian ${userName} berhasil diselesaikan secara paksa.`,
+        });
+        fetchData(true);
+      } catch (err: any) {
+        console.error(err);
+        addToast({
+          type: 'error',
+          title: 'Gagal Mengumpulkan Sesi',
+          message: err.response?.data?.message || 'Terjadi kesalahan saat memaksa pengumpulan sesi.',
+        });
+      } finally {
+        setIsActionExecuting(false);
+        setIsActionConfirmOpen(false);
+      }
+    });
+    setIsActionConfirmOpen(true);
   };
 
   const handleToggleCertificate = async (sessionId: string, userName: string) => {
@@ -1225,6 +1240,47 @@ export default function MonitorPage({ params }: PageProps) {
               className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 font-bold py-2 px-5 rounded-xl text-xs cursor-pointer"
             >
               Tutup Dashboard
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Generic Action Confirmation Modal */}
+      <Modal
+        isOpen={isActionConfirmOpen}
+        onClose={() => !isActionExecuting && setIsActionConfirmOpen(false)}
+        title={actionConfirmTitle}
+      >
+        <div className="space-y-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 rounded-2xl">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div className="space-y-1.5 flex-1 min-w-0">
+              <h4 className="text-sm font-bold text-zinc-900 dark:text-zinc-50">Konfirmasi Tindakan</h4>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium whitespace-pre-wrap leading-relaxed">
+                {actionConfirmMessage}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-850">
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={isActionExecuting}
+              onClick={() => setIsActionConfirmOpen(false)}
+              className="text-xs font-bold py-2.5 px-6 rounded-xl cursor-pointer"
+            >
+              Batal
+            </Button>
+            <Button
+              type="button"
+              isLoading={isActionExecuting}
+              onClick={() => actionConfirmCallback?.()}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl text-xs cursor-pointer"
+            >
+              Konfirmasi
             </Button>
           </div>
         </div>
