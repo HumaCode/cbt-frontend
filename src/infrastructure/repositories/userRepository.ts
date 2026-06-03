@@ -34,4 +34,15 @@ export const userRepository = {
   async deleteUser(id: string): Promise<void> {
     await api.delete(`/users/${id}`);
   },
+
+  async importUsers(file: File): Promise<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await api.post('/users/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data.data;
+  },
 };

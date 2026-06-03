@@ -26,7 +26,9 @@ import {
   Settings, 
   Check, 
   Info,
-  X
+  X,
+  Upload,
+  Download
 } from 'lucide-react';
 
 export default function UsersAdminPage() {
@@ -77,6 +79,11 @@ export default function UsersAdminPage() {
   const [deleteType, setDeleteType] = useState<'user' | 'group'>('user');
   const [deleteTargetId, setDeleteTargetId] = useState('');
   const [deleteTargetName, setDeleteTargetName] = useState('');
+
+  // Excel Import States
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -368,6 +375,47 @@ export default function UsersAdminPage() {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    const headers = ['nama_lengkap', 'username', 'email', 'password', 'no_telp', 'jenis_kelamin', 'grup'];
+    const sampleRow = ['Ahmad Dahlan', 'ahmad_dahlan', 'ahmad@cbt.com', 'sandi123', '08123456789', 'Laki-laki', 'XII-IPA-1, Unggulan'];
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+      + [headers.join(','), sampleRow.join(',')].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "template_impor_peserta.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importFile) return;
+
+    setIsImporting(true);
+    try {
+      const result = await userRepository.importUsers(importFile);
+      addToast({
+        type: 'success',
+        title: 'Impor Berhasil',
+        message: result.message || `Berhasil memproses peserta: ${result.imported_count} baru, ${result.updated_count} diperbarui.`
+      });
+      setIsImportModalOpen(false);
+      setImportFile(null);
+      loadData();
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Impor Gagal',
+        message: err.response?.data?.message || 'Gagal mengimpor file spreadsheet peserta.'
+      });
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   // Filtered users for display
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
@@ -399,13 +447,23 @@ export default function UsersAdminPage() {
 
         <div className="flex items-center gap-3">
           {activeTab === 'users' ? (
-            <Button
-              onClick={() => handleOpenUserModal()}
-              className="flex items-center gap-2 shadow-md shadow-blue-500/10 cursor-pointer"
-            >
-              <UserPlus className="h-4.5 w-4.5" />
-              <span>Tambah Peserta</span>
-            </Button>
+            <>
+              <Button
+                variant="secondary"
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 cursor-pointer text-zinc-700 dark:text-zinc-300 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              >
+                <Download className="h-4.5 w-4.5" />
+                <span>Impor Excel</span>
+              </Button>
+              <Button
+                onClick={() => handleOpenUserModal()}
+                className="flex items-center gap-2 shadow-md shadow-blue-500/10 cursor-pointer"
+              >
+                <UserPlus className="h-4.5 w-4.5" />
+                <span>Tambah Peserta</span>
+              </Button>
+            </>
           ) : (
             <Button
               onClick={() => handleOpenGroupModal()}
@@ -936,6 +994,115 @@ export default function UsersAdminPage() {
             </div>
           </div>
         </div>
+      </Modal>
+
+      {/* --- EXCEL IMPORT MODAL --- */}
+      <Modal
+        isOpen={isImportModalOpen}
+        onClose={() => !isImporting && setIsImportModalOpen(false)}
+        title="Impor Data Peserta Massal"
+      >
+        <form onSubmit={handleImportSubmit} className="space-y-6">
+          <div className="bg-blue-50 dark:bg-blue-955/20 border border-blue-150 dark:border-blue-900 p-4 rounded-2xl flex items-start gap-3.5 text-xs text-blue-700 dark:text-blue-300">
+            <Info className="h-5 w-5 shrink-0" />
+            <div className="space-y-1">
+              <span className="font-extrabold uppercase tracking-wide text-[10px]">Panduan Format Spreadsheet</span>
+              <p className="leading-relaxed font-semibold">
+                Gunakan file spreadsheet (`.xlsx` atau `.csv`) dengan baris pertama sebagai header dengan kolom berikut:
+              </p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 font-bold text-[10px] uppercase mt-2 bg-blue-100/50 dark:bg-blue-900/30 p-2.5 rounded-xl">
+                <div>• nama_lengkap</div>
+                <div>• username</div>
+                <div>• email</div>
+                <div>• password</div>
+                <div>• no_telp (opsional)</div>
+                <div>• jenis_kelamin (opsional)</div>
+                <div>• grup (opsional, pisahkan koma)</div>
+              </div>
+              <p className="text-[10px] pt-1.5 opacity-90 leading-normal">
+                * Jika username atau email sudah terdaftar di sistem, informasi peserta tersebut akan diperbarui secara otomatis.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center bg-zinc-50 dark:bg-zinc-950/40 p-3.5 border border-zinc-150 dark:border-zinc-850 rounded-2xl">
+            <div className="space-y-0.5">
+              <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 block">Butuh Template File?</span>
+              <span className="text-[10px] text-zinc-500 font-semibold">Unduh template CSV berformat standar untuk mengisi data.</span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDownloadTemplate}
+              className="flex items-center gap-1.5 font-bold py-2 px-4 rounded-xl text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Unduh Template</span>
+            </Button>
+          </div>
+
+          {/* File Upload Dropzone */}
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold text-zinc-450 uppercase tracking-wide">
+              Pilih File Spreadsheet:
+            </label>
+            <div className="relative border-2 border-dashed border-zinc-250 dark:border-zinc-800 hover:border-blue-500/80 dark:hover:border-blue-400/80 rounded-2xl p-6 text-center transition-all bg-white dark:bg-zinc-950/20">
+              <input
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+              />
+              <div className="space-y-2 flex flex-col items-center">
+                <div className="p-3 bg-zinc-100 dark:bg-zinc-900 rounded-full text-zinc-500">
+                  <Upload className="h-6 w-6" />
+                </div>
+                {importFile ? (
+                  <div className="space-y-1">
+                    <p className="text-xs font-extrabold text-blue-600 dark:text-blue-400">
+                      {importFile.name}
+                    </p>
+                    <p className="text-[10px] text-zinc-400 font-semibold">
+                      {(importFile.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-xs font-bold text-zinc-700 dark:text-zinc-300">
+                      Tarik & lepas file di sini atau klik untuk mencari
+                    </p>
+                    <p className="text-[10px] text-zinc-400 font-semibold mt-0.5">
+                      Mendukung format .xlsx, .xls, dan .csv (Maks 10MB)
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-zinc-200 dark:border-zinc-850">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isImporting}
+              onClick={() => {
+                setIsImportModalOpen(false);
+                setImportFile(null);
+              }}
+              className="text-xs font-bold py-2.5 px-6 rounded-xl cursor-pointer"
+            >
+              Batal
+            </Button>
+            <Button
+              type="submit"
+              isLoading={isImporting}
+              disabled={!importFile}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl text-xs cursor-pointer disabled:opacity-50"
+            >
+              Mulai Impor
+            </Button>
+          </div>
+        </form>
       </Modal>
 
       {/* --- DELETE CONFIRMATION MODAL --- */}
