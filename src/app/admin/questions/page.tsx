@@ -11,6 +11,13 @@ import { useToastStore } from '@/presentation/components/Toast';
 import { Plus, Edit2, Trash2, HelpCircle, Check, X, Layers, ArrowLeft, Folder } from 'lucide-react';
 import { Spinner } from '@/presentation/components/Spinner';
 
+const getMediaUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  return `${baseUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
+};
+
 export default function QuestionsPage() {
   const addToast = useToastStore((state) => state.addToast);
 
@@ -25,6 +32,11 @@ export default function QuestionsPage() {
   
   // Category navigation state
   const [activeCategoryId, setActiveCategoryId] = useState<string | null>(null);
+
+  // File upload states
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
+  const [attachmentPreviewUrl, setAttachmentPreviewUrl] = useState<string | null>(null);
+  const [deleteExistingMedia, setDeleteExistingMedia] = useState(false);
 
   // Form states
   const [categoryId, setCategoryId] = useState('');
@@ -77,6 +89,9 @@ export default function QuestionsPage() {
       { option_text: '', is_correct: false, weight: 0 },
       { option_text: '', is_correct: false, weight: 0 },
     ]);
+    setAttachmentFile(null);
+    setAttachmentPreviewUrl(null);
+    setDeleteExistingMedia(false);
     setIsOpen(true);
   };
 
@@ -98,6 +113,9 @@ export default function QuestionsPage() {
     } else {
       setOptions([]);
     }
+    setAttachmentFile(null);
+    setAttachmentPreviewUrl(null);
+    setDeleteExistingMedia(false);
     setIsOpen(true);
   };
 
@@ -168,18 +186,20 @@ export default function QuestionsPage() {
       difficulty,
       content_text: contentText,
       options: type === 'pg' ? options.filter(opt => opt.option_text.trim() !== '') : undefined,
+      clear_media: deleteExistingMedia ? 1 : undefined,
     };
 
     try {
+      const attachments = attachmentFile ? [attachmentFile] : undefined;
       if (selectedQuestion) {
-        await assessmentRepository.updateQuestion(selectedQuestion.id, payload);
+        await assessmentRepository.updateQuestion(selectedQuestion.id, payload, attachments);
         addToast({
           type: 'success',
           title: 'Berhasil',
           message: 'Soal berhasil diperbarui.',
         });
       } else {
-        await assessmentRepository.createQuestion(payload);
+        await assessmentRepository.createQuestion(payload, attachments);
         addToast({
           type: 'success',
           title: 'Berhasil',
@@ -347,9 +367,20 @@ export default function QuestionsPage() {
                   return (
                     <tr key={quest.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
                       <td className="px-6 py-4">
-                        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-2 max-w-md">
-                          {quest.content_text}
-                        </p>
+                        <div className="flex items-start gap-4">
+                          {quest.media && quest.media.length > 0 && (
+                            <img
+                              src={getMediaUrl(quest.media[0].original_url || quest.media[0].url)}
+                              alt="Attachment"
+                              className="w-12 h-12 object-cover rounded-lg border border-zinc-200 dark:border-zinc-850 flex-shrink-0"
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 line-clamp-2 max-w-md">
+                              {quest.content_text}
+                            </p>
+                          </div>
+                        </div>
                         {quest.type === 'pg' && quest.options && (
                           <div className="flex gap-2.5 mt-1.5 flex-wrap">
                             {quest.options.map((opt) => (
@@ -498,6 +529,72 @@ export default function QuestionsPage() {
               disabled={submitting}
               className="w-full p-4 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white outline-none min-h-[120px] text-sm"
             />
+          </div>
+
+          {/* Lampiran Gambar Ujian */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              Lampiran Gambar Soal (Opsional)
+            </label>
+            
+            {/* Existing Attachment Display */}
+            {selectedQuestion?.media && selectedQuestion.media.length > 0 && !deleteExistingMedia && (
+              <div className="relative w-36 h-24 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-950 flex-shrink-0">
+                <img
+                  src={getMediaUrl(selectedQuestion.media[0].original_url || selectedQuestion.media[0].url)}
+                  alt="Attachment"
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => setDeleteExistingMedia(true)}
+                  className="absolute top-1 right-1 bg-red-650 text-white rounded-full p-1 hover:bg-red-700 transition-colors cursor-pointer shadow-sm"
+                  title="Hapus gambar saat ini"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* New Attachment Upload Preview */}
+            {attachmentPreviewUrl ? (
+              <div className="relative w-36 h-24 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-850 bg-zinc-100 dark:bg-zinc-950 flex-shrink-0">
+                <img
+                  src={attachmentPreviewUrl}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachmentFile(null);
+                    setAttachmentPreviewUrl(null);
+                  }}
+                  className="absolute top-1 right-1 bg-zinc-800/80 text-white rounded-full p-1 hover:bg-zinc-900 transition-colors cursor-pointer shadow-sm"
+                  title="Batal pilih"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              (!selectedQuestion?.media || selectedQuestion.media.length === 0 || deleteExistingMedia) && (
+                <div className="flex items-center gap-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setAttachmentFile(file);
+                        setAttachmentPreviewUrl(URL.createObjectURL(file));
+                      }
+                    }}
+                    disabled={submitting}
+                    className="text-xs text-zinc-550 dark:text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 dark:file:bg-blue-950/20 dark:file:text-blue-400 hover:file:bg-blue-100 cursor-pointer"
+                  />
+                </div>
+              )
+            )}
           </div>
 
           {/* Multiple Choice Options Panel */}

@@ -24,6 +24,13 @@ interface PageProps {
   params: Promise<{ sessionId: string }>;
 }
 
+const getMediaUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  return `${baseUrl.replace(/\/$/, '')}/${url.replace(/^\//, '')}`;
+};
+
 export default function ExamPage({ params }: PageProps) {
   const router = useRouter();
   const { sessionId } = use(params);
@@ -411,8 +418,20 @@ export default function ExamPage({ params }: PageProps) {
             </div>
 
             {/* Question Text */}
-            <div className="flex-1 py-4 text-zinc-900 dark:text-zinc-50 text-lg leading-relaxed font-medium">
-              {currentQuestion.content_text}
+            <div className="flex-1 py-4 space-y-4">
+              <p className="text-zinc-950 dark:text-zinc-50 text-lg leading-relaxed font-semibold">
+                {currentQuestion.content_text}
+              </p>
+              
+              {currentQuestion.media && currentQuestion.media.length > 0 && (
+                <div className="max-w-full sm:max-w-xl rounded-2xl overflow-hidden border border-zinc-200/80 dark:border-zinc-800 shadow-sm bg-white dark:bg-zinc-950 p-1">
+                  <img
+                    src={getMediaUrl(currentQuestion.media[0].original_url || currentQuestion.media[0].url)}
+                    alt="Gambar Soal"
+                    className="w-full h-auto max-h-[350px] object-contain rounded-xl mx-auto"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Options or Essay Textarea */}
@@ -447,17 +466,23 @@ export default function ExamPage({ params }: PageProps) {
                         className={`w-full text-left px-5 py-4 rounded-xl border flex items-center gap-4 transition-all duration-200 cursor-pointer ${
                           isSelected
                             ? 'bg-blue-50/70 border-blue-500 text-blue-900 shadow-sm dark:bg-blue-950/20 dark:border-blue-500 dark:text-blue-200 font-semibold'
-                            : 'border-zinc-200 hover:bg-zinc-50/50 hover:border-zinc-300 dark:border-zinc-800/80 dark:hover:bg-zinc-800/30'
+                            : 'border-zinc-200 bg-white hover:bg-zinc-50/50 hover:border-zinc-350 dark:border-zinc-800/80 dark:bg-zinc-900/20 dark:hover:bg-zinc-800/30'
                         }`}
                       >
                         <span className={`flex h-8 w-8 items-center justify-center rounded-lg font-bold text-sm ${
                           isSelected
                             ? 'bg-blue-600 text-white dark:bg-blue-500'
-                            : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                            : 'bg-zinc-100 text-zinc-650 dark:bg-zinc-800 dark:text-zinc-400 border border-zinc-200/50 dark:border-transparent'
                         }`}>
                           {letter}
                         </span>
-                        <span className="flex-1">{option.option_text}</span>
+                        <span className={`flex-1 font-medium ${
+                          isSelected 
+                            ? 'text-blue-900 dark:text-blue-200' 
+                            : 'text-zinc-800 dark:text-zinc-200'
+                        }`}>
+                          {option.option_text}
+                        </span>
                       </button>
                     );
                   })}

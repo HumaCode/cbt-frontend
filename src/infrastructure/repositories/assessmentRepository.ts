@@ -91,23 +91,73 @@ export const assessmentRepository = {
     if (Array.isArray(resData)) return resData;
     return [];
   },
-  async createQuestion(data: {
-    category_id: string;
-    type: string;
-    difficulty: string;
-    content_text: string;
-    options?: { option_text: string; is_correct?: boolean; weight?: number }[];
-  }): Promise<Question> {
+  async createQuestion(
+    data: {
+      category_id: string;
+      type: string;
+      difficulty: string;
+      content_text: string;
+      options?: { option_text: string; is_correct?: boolean; weight?: number }[];
+    },
+    attachments?: File[]
+  ): Promise<Question> {
+    if (attachments && attachments.length > 0) {
+      const formData = new FormData();
+      formData.append('category_id', data.category_id);
+      formData.append('type', data.type);
+      formData.append('difficulty', data.difficulty);
+      formData.append('content_text', data.content_text);
+      if (data.options) {
+        data.options.forEach((opt, idx) => {
+          formData.append(`options[${idx}][option_text]`, opt.option_text);
+          formData.append(`options[${idx}][is_correct]`, opt.is_correct ? '1' : '0');
+          formData.append(`options[${idx}][weight]`, (opt.weight || 0).toString());
+        });
+      }
+      attachments.forEach((file) => {
+        formData.append('attachments[]', file);
+      });
+      const response = await api.post('/api/v1/questions', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data.data;
+    }
     const response = await api.post('/api/v1/questions', data);
     return response.data.data;
   },
-  async updateQuestion(id: string, data: {
-    category_id: string;
-    type: string;
-    difficulty: string;
-    content_text: string;
-    options?: { option_text: string; is_correct?: boolean; weight?: number }[];
-  }): Promise<Question> {
+  async updateQuestion(
+    id: string,
+    data: {
+      category_id: string;
+      type: string;
+      difficulty: string;
+      content_text: string;
+      options?: { option_text: string; is_correct?: boolean; weight?: number }[];
+    },
+    attachments?: File[]
+  ): Promise<Question> {
+    if (attachments && attachments.length > 0) {
+      const formData = new FormData();
+      formData.append('_method', 'PUT'); // Method spoofing for Laravel PUT requests with files
+      formData.append('category_id', data.category_id);
+      formData.append('type', data.type);
+      formData.append('difficulty', data.difficulty);
+      formData.append('content_text', data.content_text);
+      if (data.options) {
+        data.options.forEach((opt, idx) => {
+          formData.append(`options[${idx}][option_text]`, opt.option_text);
+          formData.append(`options[${idx}][is_correct]`, opt.is_correct ? '1' : '0');
+          formData.append(`options[${idx}][weight]`, (opt.weight || 0).toString());
+        });
+      }
+      attachments.forEach((file) => {
+        formData.append('attachments[]', file);
+      });
+      const response = await api.post(`/api/v1/questions/${id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return response.data.data;
+    }
     const response = await api.put(`/api/v1/questions/${id}`, data);
     return response.data.data;
   },
