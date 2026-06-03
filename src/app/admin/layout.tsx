@@ -8,6 +8,7 @@ import { useToastStore } from '@/presentation/components/Toast';
 import { Button } from '@/presentation/components/Button';
 import { ThemeToggle } from '@/presentation/components/ThemeToggle';
 import { Spinner } from '@/presentation/components/Spinner';
+import { Modal } from '@/presentation/components/Modal';
 import { 
   GraduationCap, 
   LayoutDashboard, 
@@ -28,6 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -124,7 +126,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </Button>
           <Button
             variant="outline"
-            onClick={handleLogout}
+            onClick={() => setIsLogoutModalOpen(true)}
             className="w-full justify-center gap-2 text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/20"
           >
             <LogOut className="h-4 w-4" />
@@ -186,7 +188,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </Button>
               <Button
                 variant="outline"
-                onClick={handleLogout}
+                onClick={() => setIsLogoutModalOpen(true)}
                 className="w-full justify-center gap-2 text-red-600"
               >
                 <LogOut className="h-4 w-4" />
@@ -225,6 +227,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </main>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        title="Konfirmasi Keluar"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-zinc-650 dark:text-zinc-400 text-sm leading-relaxed">
+            Apakah Anda yakin ingin keluar dari akun Anda? Anda harus memasukkan kredensial login kembali untuk mengakses ujian dan data Anda.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsLogoutModalOpen(false)}
+              className="cursor-pointer"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-500 text-white cursor-pointer"
+            >
+              Keluar
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

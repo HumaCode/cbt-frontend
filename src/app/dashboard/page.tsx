@@ -39,6 +39,7 @@ export default function DashboardPage() {
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const [isStartModalOpen, setIsStartModalOpen] = useState(false);
   const [isStartingExam, setIsStartingExam] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -156,7 +157,7 @@ export default function DashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleLogout}
+              onClick={() => setIsLogoutModalOpen(true)}
               className="flex items-center gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:border-red-950 dark:hover:bg-red-950/20 dark:hover:text-red-300"
             >
               <LogOut className="h-4 w-4" />
@@ -279,6 +280,35 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        title="Konfirmasi Keluar"
+        size="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-zinc-650 dark:text-zinc-400 text-sm leading-relaxed">
+            Apakah Anda yakin ingin keluar dari akun Anda? Anda harus memasukkan kredensial login kembali untuk mengakses ujian dan data Anda.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsLogoutModalOpen(false)}
+              className="cursor-pointer"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-500 text-white cursor-pointer"
+            >
+              Keluar
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
