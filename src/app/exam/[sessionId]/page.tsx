@@ -42,6 +42,7 @@ export default function ExamPage({ params }: PageProps) {
     isLoading,
     error,
     startExamSession,
+    startExamTimer,
     selectQuestion,
     saveAnswerLocally,
     syncAnswerWithApi,
@@ -183,6 +184,12 @@ export default function ExamPage({ params }: PageProps) {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
       }
+
+      // Start/reset countdown timer on backend only when candidate enters exam sheet
+      if (currentSession) {
+        await startExamTimer(currentSession.id);
+      }
+
       setIsSecureModeInitialized(true);
       setIsFullscreen(true);
       // Save active assessment id helper

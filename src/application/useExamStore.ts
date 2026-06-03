@@ -12,6 +12,7 @@ interface ExamState {
   error: string | null;
   
   startExamSession: (assessmentId: string) => Promise<AssessmentSession>;
+  startExamTimer: (sessionId: string) => Promise<AssessmentSession>;
   resumeExamSession: (session: AssessmentSession) => void;
   selectQuestion: (index: number) => void;
   saveAnswerLocally: (questionId: string, optionId: string | null) => void;
@@ -80,6 +81,17 @@ export const useExamStore = create<ExamState>((set, get) => ({
     } catch (err: any) {
       const errMsg = err.response?.data?.message || 'Gagal memulai ujian.';
       set({ error: errMsg, isLoading: false });
+      throw err;
+    }
+  },
+
+  startExamTimer: async (sessionId: string) => {
+    try {
+      const session = await assessmentRepository.startTimer(sessionId);
+      set({ currentSession: session });
+      return session;
+    } catch (err: any) {
+      console.error('Failed to start exam timer:', err);
       throw err;
     }
   },

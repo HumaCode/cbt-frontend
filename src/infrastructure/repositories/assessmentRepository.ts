@@ -26,6 +26,11 @@ export const assessmentRepository = {
     return response.data.data as AssessmentSession;
   },
 
+  async startTimer(sessionId: string): Promise<AssessmentSession> {
+    const response = await api.post(`/api/v1/sessions/${sessionId}/start-timer`);
+    return response.data.data as AssessmentSession;
+  },
+
   async submitAnswer(
     sessionId: string, 
     questionId: string, 
