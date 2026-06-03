@@ -15,7 +15,8 @@ import {
   Clock, 
   ArrowUpRight, 
   Award,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -227,6 +228,151 @@ export default function AdminDashboard() {
                 </div>
               ))
             )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Group Performance Analysis (Group Analytics) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Chart Column */}
+        <Card className="lg:col-span-2 p-6 bg-white dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                Grafik Komparasi Rata-rata Skor antar Grup
+              </h2>
+              <span className="text-xs text-zinc-500 font-semibold bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-full">
+                Skor Rata-rata (Skala 0-100)
+              </span>
+            </div>
+
+            {!stats.group_performance || stats.group_performance.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 text-zinc-400 dark:text-zinc-500">
+                <AlertTriangle className="h-10 w-10 text-zinc-350 dark:text-zinc-650 mb-2 animate-bounce" />
+                <p className="text-sm font-semibold">Belum ada data hasil ujian dari kelas peserta.</p>
+                <p className="text-xs mt-1">Hasil komparasi akan otomatis muncul setelah ujian selesai dikerjakan.</p>
+              </div>
+            ) : (
+              <div className="space-y-6 my-4">
+                {stats.group_performance.map((gp: any, index: number) => {
+                  const scorePercentage = Math.min(Math.max(gp.average_score, 0), 100);
+                  
+                  return (
+                    <div key={gp.id} className="group relative">
+                      <div className="flex justify-between items-end mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`flex h-5 w-5 items-center justify-center rounded-md text-[10px] font-bold ${
+                            index === 0 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300' :
+                            index === 1 ? 'bg-zinc-200 text-zinc-850 dark:bg-zinc-800 dark:text-zinc-300' :
+                            'bg-zinc-105 text-zinc-600 dark:bg-zinc-800/40 dark:text-zinc-400'
+                          }`}>
+                            {index + 1}
+                          </span>
+                          <span className="text-xs font-bold text-zinc-800 dark:text-zinc-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {gp.name}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className="text-zinc-450 dark:text-zinc-505 font-medium">
+                            {gp.total_sessions} Sesi Selesai
+                          </span>
+                          <span className="font-extrabold text-zinc-800 dark:text-zinc-100 bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded text-[11px]">
+                            Rata-rata: <span className="text-blue-600 dark:text-blue-400">{gp.average_score}</span>
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Interactive Bar */}
+                      <div className="w-full bg-zinc-100 dark:bg-zinc-800 h-6.5 rounded-xl overflow-hidden relative border border-zinc-200/20 dark:border-zinc-805/40 shadow-inner flex items-center">
+                        <div 
+                          className="bg-gradient-to-r from-blue-600 to-indigo-650 dark:from-blue-650 dark:to-indigo-500 h-full rounded-l-lg transition-all duration-750 ease-out flex items-center justify-end pr-2 group-hover:from-blue-500 group-hover:to-indigo-500" 
+                          style={{ width: `${scorePercentage}%` }}
+                        >
+                          {scorePercentage > 15 && (
+                            <span className="text-[10px] font-black text-white tracking-wide animate-fade-in">
+                              {gp.average_score}
+                            </span>
+                          )}
+                        </div>
+                        {scorePercentage <= 15 && (
+                          <span className="text-[10px] font-black text-zinc-500 pl-2">
+                            {gp.average_score}
+                          </span>
+                        )}
+                        
+                        {/* Soft background grid lines */}
+                        <div className="absolute left-1/4 top-0 bottom-0 w-[1px] bg-zinc-300/20 dark:bg-zinc-700/20 pointer-events-none" />
+                        <div className="absolute left-2/4 top-0 bottom-0 w-[1px] bg-zinc-300/20 dark:bg-zinc-700/20 pointer-events-none" />
+                        <div className="absolute left-3/4 top-0 bottom-0 w-[1px] bg-zinc-300/20 dark:bg-zinc-700/20 pointer-events-none" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+          
+          <div className="text-[10px] font-bold text-zinc-400 dark:text-zinc-500 border-t border-zinc-100 dark:border-zinc-800/50 pt-4 flex justify-between">
+            <span>Grid Skala: 0, 25, 50, 75, 100</span>
+            <span>Diperbarui secara real-time</span>
+          </div>
+        </Card>
+
+        {/* Detailed Comparison Table Column */}
+        <Card className="p-6 bg-white dark:bg-zinc-900/30 border border-zinc-200/60 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between">
+          <div>
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 flex items-center gap-2 mb-6">
+              <Award className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              Tabel Komparasi & Kelulusan
+            </h2>
+
+            {!stats.group_performance || stats.group_performance.length === 0 ? (
+              <div className="text-xs text-zinc-500 text-center py-12">
+                Tidak ada data performa untuk ditampilkan.
+              </div>
+            ) : (
+              <div className="space-y-3.5">
+                {/* Header row */}
+                <div className="grid grid-cols-3 text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-505 px-1">
+                  <span>Nama Grup</span>
+                  <span className="text-center">Rerata Skor</span>
+                  <span className="text-right">Kelulusan</span>
+                </div>
+
+                {/* Data rows sorted by average score */}
+                {[...stats.group_performance]
+                  .sort((a, b) => b.average_score - a.average_score)
+                  .map((gp, idx) => (
+                    <div 
+                      key={gp.id} 
+                      className="grid grid-cols-3 items-center text-xs font-semibold py-2.5 px-3 border border-zinc-100 dark:border-zinc-850 rounded-xl bg-zinc-50/40 dark:bg-zinc-950/10 hover:border-zinc-200 dark:hover:border-zinc-700/60 transition-all duration-200"
+                    >
+                      <span className="text-zinc-800 dark:text-zinc-200 truncate pr-1" title={gp.name}>
+                        {gp.name}
+                      </span>
+                      <span className="text-center font-bold text-blue-600 dark:text-blue-400">
+                        {gp.average_score}
+                      </span>
+                      <span className="text-right">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                          gp.passing_rate >= 80 
+                            ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400'
+                            : gp.passing_rate >= 50
+                            ? 'bg-blue-50 text-blue-600 dark:bg-blue-950/20 dark:text-blue-400'
+                            : 'bg-amber-50 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400'
+                        }`}>
+                          {gp.passing_rate}% Lulus
+                        </span>
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+
+          <div className="text-[10px] text-zinc-400 dark:text-zinc-500 border-t border-zinc-100 dark:border-zinc-800/50 pt-4 leading-normal mt-4">
+            Kelulusan dihitung berdasarkan persentase sesi ujian yang memenuhi KKM.
           </div>
         </Card>
       </div>
