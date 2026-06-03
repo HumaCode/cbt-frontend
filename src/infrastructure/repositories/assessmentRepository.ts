@@ -292,4 +292,15 @@ export const assessmentRepository = {
     const response = await api.get('/dashboard/stats');
     return response.data.data;
   },
+  async getAssessmentSession(sessionId: string): Promise<any> {
+    const response = await api.get(`/sessions/${sessionId}`);
+    return response.data.data;
+  },
+  async gradeEssay(sessionId: string, questionId: string, score: number): Promise<any> {
+    const response = await api.post(`/sessions/${sessionId}/grade-essay`, {
+      question_id: questionId,
+      score,
+    });
+    return response.data.data;
+  },
 };

@@ -35,9 +35,9 @@ Berikut adalah daftar tugas untuk melengkapi Portal CBT menjadi sistem ujian yan
 ---
 
 ## 🔵 Fase 2 (Pengembangan Lanjutan & Enterprise)
-- [ ] **Rubrik Penilaian Soal Esai (Manual Grading Panel)**
-  - [ ] Tambahkan dashboard koreksi jawaban esai peserta untuk admin/penguji.
-  - [ ] Sediakan form input nilai manual ($0 - 100$) per jawaban esai.
+- [x] **Rubrik Penilaian Soal Esai (Manual Grading Panel)**
+  - [x] Tambahkan dashboard koreksi jawaban esai peserta untuk admin/penguji.
+  - [x] Sediakan form input nilai manual ($0 - 100$) per jawaban esai.
 - [ ] **Manajemen Peserta & Grup via Impor Excel**
   - [ ] Sediakan modul tambah/kelola peserta dan pembagian grup kelas.
   - [ ] Implementasikan fitur impor data peserta massal dari file spreadsheet (`.xlsx`).

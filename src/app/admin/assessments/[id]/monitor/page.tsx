@@ -26,7 +26,8 @@ import {
   Trash2,
   Lock,
   Unlock,
-  Download
+  Download,
+  Edit3
 } from 'lucide-react';
 import { Pagination } from '@/presentation/components/Pagination';
 
@@ -72,6 +73,15 @@ export default function MonitorPage({ params }: PageProps) {
   const [analysisData, setAnalysisData] = useState<any[]>([]);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
   const [analysisFilter, setAnalysisFilter] = useState<'all' | 'hard' | 'easy'>('all');
+
+  // Custom manual grading modal states
+  const [isGradingOpen, setIsGradingOpen] = useState(false);
+  const [gradingSessionId, setGradingSessionId] = useState<string | null>(null);
+  const [gradingParticipantName, setGradingParticipantName] = useState('');
+  const [gradingSessionData, setGradingSessionData] = useState<any>(null);
+  const [loadingGrading, setLoadingGrading] = useState(false);
+  const [savingGrading, setSavingGrading] = useState<{ [questionId: string]: boolean }>({});
+  const [scoresInput, setScoresInput] = useState<{ [questionId: string]: string }>({});
 
   // Load page from URL query string on mount
   useEffect(() => {
@@ -357,6 +367,90 @@ export default function MonitorPage({ params }: PageProps) {
         title: 'Gagal Mengubah Rilis Sertifikat',
         message: err.response?.data?.message || 'Terjadi kesalahan saat memperbarui status rilis sertifikat.',
       });
+    }
+  };
+
+  const handleOpenGradingPanel = async (sessionId: string, participantName: string) => {
+    setIsGradingOpen(true);
+    setGradingSessionId(sessionId);
+    setGradingParticipantName(participantName);
+    setLoadingGrading(true);
+    setGradingSessionData(null);
+    setScoresInput({});
+    try {
+      const data = await assessmentRepository.getAssessmentSession(sessionId);
+      setGradingSessionData(data);
+      
+      const initialScores: { [questionId: string]: string } = {};
+      if (data.answers) {
+        data.answers.forEach((ans: any) => {
+          initialScores[ans.question_id] = String(ans.score_earned ?? '0');
+        });
+      }
+      setScoresInput(initialScores);
+    } catch (err) {
+      console.error('Failed to load session details for grading', err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Memuat Data',
+        message: 'Gagal memuat jawaban peserta untuk dikoreksi.',
+      });
+      setIsGradingOpen(false);
+    } finally {
+      setLoadingGrading(false);
+    }
+  };
+
+  const handleSaveGrade = async (questionId: string) => {
+    if (!gradingSessionId) return;
+    const scoreVal = parseFloat(scoresInput[questionId] || '0');
+    if (isNaN(scoreVal) || scoreVal < 0 || scoreVal > 100) {
+      addToast({
+        type: 'error',
+        title: 'Input Tidak Valid',
+        message: 'Skor harus berupa angka antara 0 sampai 100.',
+      });
+      return;
+    }
+
+    setSavingGrading((prev) => ({ ...prev, [questionId]: true }));
+    try {
+      const updatedAnswer = await assessmentRepository.gradeEssay(gradingSessionId, questionId, scoreVal);
+      addToast({
+        type: 'success',
+        title: 'Skor Disimpan',
+        message: 'Nilai soal esai berhasil diperbarui.',
+      });
+
+      setGradingSessionData((prev: any) => {
+        if (!prev) return null;
+        const updatedAnswers = prev.answers ? [...prev.answers] : [];
+        const ansIndex = updatedAnswers.findIndex((a: any) => a.question_id === questionId);
+        if (ansIndex > -1) {
+          updatedAnswers[ansIndex] = { ...updatedAnswers[ansIndex], score_earned: scoreVal };
+        } else {
+          updatedAnswers.push(updatedAnswer);
+        }
+
+        const newTotalScore = updatedAnswers.reduce((sum: number, ans: any) => sum + parseFloat(ans.score_earned ?? 0), 0);
+
+        return {
+          ...prev,
+          answers: updatedAnswers,
+          total_score: newTotalScore,
+        };
+      });
+
+      fetchData(true);
+    } catch (err) {
+      console.error('Failed to save score', err);
+      addToast({
+        type: 'error',
+        title: 'Gagal Menyimpan Nilai',
+        message: 'Terjadi kesalahan saat menyimpan nilai.',
+      });
+    } finally {
+      setSavingGrading((prev) => ({ ...prev, [questionId]: false }));
     }
   };
 
@@ -803,6 +897,15 @@ export default function MonitorPage({ params }: PageProps) {
                               <Lock className="h-4 w-4" />
                             </button>
                           )}
+                          {isFinished && (
+                            <button
+                              onClick={() => handleOpenGradingPanel(session.id, session.user?.name || 'Peserta')}
+                              className="p-1.5 rounded-lg text-zinc-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all cursor-pointer"
+                              title="Koreksi Jawaban Esai"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                          )}
                           <button
                             onClick={() => handleDeleteSingle(session.id, session.user?.name || 'Peserta')}
                             className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer"
@@ -1122,6 +1225,144 @@ export default function MonitorPage({ params }: PageProps) {
               className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 font-bold py-2 px-5 rounded-xl text-xs cursor-pointer"
             >
               Tutup Dashboard
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Essay Manual Grading Modal */}
+      <Modal
+        isOpen={isGradingOpen}
+        onClose={() => setIsGradingOpen(false)}
+        title={`Koreksi Jawaban Esai: ${gradingParticipantName}`}
+      >
+        <div className="space-y-6">
+          {loadingGrading || !gradingSessionData ? (
+            <div className="flex justify-center py-12">
+              <Spinner label="Memuat jawaban peserta..." />
+            </div>
+          ) : (
+            <>
+              {/* Header Info */}
+              <div className="flex justify-between items-center p-4 bg-zinc-50 dark:bg-zinc-950/40 border border-zinc-150 dark:border-zinc-800 rounded-2xl text-xs">
+                <div>
+                  <span className="text-zinc-400 block font-semibold uppercase">Nama Ujian</span>
+                  <span className="font-extrabold text-zinc-800 dark:text-zinc-200 text-sm">
+                    {gradingSessionData.assessment?.title}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-zinc-400 block font-semibold uppercase font-bold">Total Nilai Saat Ini</span>
+                  <span className="font-black text-xl text-blue-600 dark:text-blue-400">
+                    {parseFloat(gradingSessionData.total_score ?? '0').toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Essay Questions List */}
+              <div className="space-y-5 max-h-[500px] overflow-y-auto pr-1.5">
+                {(() => {
+                  const essayQuestions = gradingSessionData.assessment?.questions?.filter(
+                    (q: any) => q.type === 'essay'
+                  ) || [];
+
+                  if (essayQuestions.length === 0) {
+                    return (
+                      <div className="text-center py-10 text-zinc-450 font-bold text-sm">
+                        Ujian ini tidak memiliki butir soal tipe Esai.
+                      </div>
+                    );
+                  }
+
+                  return essayQuestions.map((question: any, idx: number) => {
+                    const candidateAnswer = gradingSessionData.answers?.find(
+                      (ans: any) => ans.question_id === question.id
+                    );
+                    const currentScore = scoresInput[question.id] || '0';
+                    const isSaving = savingGrading[question.id] || false;
+
+                    return (
+                      <div
+                        key={question.id}
+                        className="p-5 border border-zinc-200 dark:border-zinc-850 rounded-2xl space-y-4 bg-white dark:bg-zinc-900/10 hover:shadow-sm transition-all"
+                      >
+                        {/* Question Header */}
+                        <div className="flex justify-between items-start">
+                          <span className="px-2.5 py-1 bg-indigo-50 dark:bg-indigo-950/20 text-indigo-650 dark:text-indigo-400 text-[10px] font-black rounded-full uppercase tracking-wider">
+                            Pertanyaan #{idx + 1}
+                          </span>
+                          <span className="text-xs font-semibold text-zinc-455">
+                            Sub-Materi: <strong className="text-zinc-650 dark:text-zinc-300">{question.category?.name || 'Umum'}</strong>
+                          </span>
+                        </div>
+
+                        {/* Question Text */}
+                        <div className="text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed font-semibold bg-zinc-50/50 dark:bg-zinc-950/20 p-3.5 rounded-xl border border-zinc-150/50 dark:border-zinc-850">
+                          <p dangerouslySetInnerHTML={{ __html: question.content_text }} />
+                        </div>
+
+                        {/* Candidate Answer */}
+                        <div className="space-y-1.5">
+                          <span className="block text-[10px] font-bold text-zinc-450 uppercase tracking-wide">
+                            Jawaban Peserta:
+                          </span>
+                          <div className="p-4 rounded-xl border border-zinc-150 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/50 text-xs text-zinc-700 dark:text-zinc-300 font-medium whitespace-pre-wrap min-h-[60px] leading-relaxed">
+                            {candidateAnswer?.answer_text ? (
+                              candidateAnswer.answer_text
+                            ) : (
+                              <span className="text-zinc-400 italic font-semibold">(Peserta tidak mengisi jawaban)</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Manual Grading Action Form */}
+                        <div className="flex items-end justify-between gap-4 pt-2 border-t border-zinc-100 dark:border-zinc-850">
+                          <div className="flex-1 space-y-1.5 max-w-[200px]">
+                            <label className="block text-[10px] font-bold text-zinc-450 uppercase tracking-wide">
+                              Beri Skor (0 - 100):
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.5"
+                              value={currentScore}
+                              onChange={(e) =>
+                                setScoresInput((prev) => ({
+                                  ...prev,
+                                  [question.id]: e.target.value,
+                                }))
+                              }
+                              className="w-full px-3 py-2 text-xs font-bold rounded-xl border border-zinc-200 dark:border-zinc-750 bg-white dark:bg-zinc-900 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                              placeholder="0"
+                            />
+                          </div>
+                          
+                          <Button
+                            type="button"
+                            onClick={() => handleSaveGrade(question.id)}
+                            isLoading={isSaving}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
+                          >
+                            Simpan Nilai
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </>
+          )}
+
+          {/* Modal Footer */}
+          <div className="flex justify-end pt-4 border-t border-zinc-200 dark:border-zinc-850">
+            <Button
+              type="button"
+              onClick={() => setIsGradingOpen(false)}
+              className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-950 font-bold py-2.5 px-6 rounded-xl text-xs cursor-pointer"
+            >
+              Selesai Koreksi
             </Button>
           </div>
         </div>
