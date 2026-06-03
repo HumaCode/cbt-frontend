@@ -96,101 +96,85 @@ export default function RegisterPage() {
 
         <Card className="border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/30 p-8 shadow-xl shadow-zinc-200/30 dark:shadow-none backdrop-blur-xl rounded-3xl">
           <form className="space-y-4" onSubmit={handleRegister}>
-            <div className="relative">
-              <div className="absolute top-[34px] left-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
-                <User className="h-4.5 w-4.5" />
-              </div>
-              <Input
-                label="Nama Lengkap"
-                placeholder="John Doe"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                error={errors.name}
-                className="pl-10 border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
-                disabled={isLoading}
-              />
-            </div>
+            <Input
+              label="Nama Lengkap"
+              placeholder="John Doe"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              error={errors.name}
+              leftIcon={<User className="h-4.5 w-4.5" />}
+              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+              disabled={isLoading}
+            />
 
-            <div className="relative">
-              <div className="absolute top-[34px] left-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
-                <UserPlus className="h-4.5 w-4.5" />
-              </div>
-              <Input
-                label="Username"
-                placeholder="johndoe"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                error={errors.username}
-                className="pl-10 border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
-                disabled={isLoading}
-              />
-            </div>
+            <Input
+              label="Username"
+              placeholder="johndoe"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              error={errors.username}
+              leftIcon={<UserPlus className="h-4.5 w-4.5" />}
+              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+              disabled={isLoading}
+            />
 
-            <div className="relative">
-              <div className="absolute top-[34px] left-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
-                <Mail className="h-4.5 w-4.5" />
-              </div>
-              <Input
-                label="Alamat Email"
-                placeholder="johndoe@email.com"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                error={errors.email}
-                className="pl-10 border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
-                disabled={isLoading}
-              />
-            </div>
+            <Input
+              label="Alamat Email"
+              placeholder="johndoe@email.com"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              error={errors.email}
+              leftIcon={<Mail className="h-4.5 w-4.5" />}
+              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+              disabled={isLoading}
+            />
 
-            <div className="relative">
-              <div className="absolute top-[34px] left-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
-                <Lock className="h-4.5 w-4.5" />
-              </div>
-              <Input
-                label="Kata Sandi"
-                placeholder="••••••••"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                error={errors.password}
-                className="pl-10 pr-10 border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute top-[34px] right-3.5 flex items-center text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
-              </button>
-            </div>
+            <Input
+              label="Kata Sandi"
+              placeholder="••••••••"
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              error={errors.password}
+              leftIcon={<Lock className="h-4.5 w-4.5" />}
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                </button>
+              }
+              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+              disabled={isLoading}
+            />
 
-            <div className="relative">
-              <div className="absolute top-[34px] left-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
-                <Lock className="h-4.5 w-4.5" />
-              </div>
-              <Input
-                label="Konfirmasi Kata Sandi"
-                placeholder="••••••••"
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={passwordConfirmation}
-                onChange={(e) => setPasswordConfirmation(e.target.value)}
-                error={errors.password_confirmation}
-                className="pl-10 pr-10 border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
-                disabled={isLoading}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute top-[34px] right-3.5 flex items-center text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer"
-                tabIndex={-1}
-              >
-                {showConfirmPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
-              </button>
-            </div>
+            <Input
+              label="Konfirmasi Kata Sandi"
+              placeholder="••••••••"
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={passwordConfirmation}
+              onChange={(e) => setPasswordConfirmation(e.target.value)}
+              error={errors.password_confirmation}
+              leftIcon={<Lock className="h-4.5 w-4.5" />}
+              rightIcon={
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                </button>
+              }
+              className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+              disabled={isLoading}
+            />
 
             <Button
               type="submit"

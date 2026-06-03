@@ -4,12 +4,16 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 export const Input: React.FC<InputProps> = ({
   label,
   error,
   helperText,
+  leftIcon,
+  rightIcon,
   className = '',
   id,
   ...props
@@ -27,15 +31,29 @@ export const Input: React.FC<InputProps> = ({
           {label}
         </label>
       )}
-      <input
-        id={inputId}
-        className={`w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-950 shadow-sm transition-colors duration-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-blue-500 dark:focus:ring-blue-500 ${
-          error
-            ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-500 dark:focus:border-red-500 dark:focus:ring-red-500'
-            : ''
-        } ${className}`}
-        {...props}
-      />
+      <div className="relative w-full flex items-center">
+        {leftIcon && (
+          <div className="absolute left-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
+            {leftIcon}
+          </div>
+        )}
+        <input
+          id={inputId}
+          className={`w-full px-4 py-2.5 rounded-xl border border-zinc-200 bg-white text-zinc-950 shadow-sm transition-colors duration-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50 dark:focus:border-blue-500 dark:focus:ring-blue-500 ${
+            leftIcon ? 'pl-10' : ''
+          } ${rightIcon ? 'pr-10' : ''} ${
+            error
+              ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-500 dark:focus:border-red-500 dark:focus:ring-red-500'
+              : ''
+          } ${className}`}
+          {...props}
+        />
+        {rightIcon && (
+          <div className="absolute right-3.5 flex items-center">
+            {rightIcon}
+          </div>
+        )}
+      </div>
       {error ? (
         <span className="text-sm text-red-600 dark:text-red-400">{error}</span>
       ) : helperText ? (

@@ -72,45 +72,39 @@ function LoginForm() {
   return (
     <Card className="border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/30 p-8 shadow-xl shadow-zinc-200/30 dark:shadow-none backdrop-blur-xl rounded-3xl">
       <form className="space-y-6" onSubmit={handleLogin}>
-        <div className="relative">
-          <div className="absolute top-[34px] left-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
-            <Mail className="h-4.5 w-4.5" />
-          </div>
-          <Input
-            label="Email atau Username"
-            placeholder="candidat@email.com atau username"
-            type="text"
-            value={loginInput}
-            onChange={(e) => setLoginInput(e.target.value)}
-            error={errors.login}
-            className="pl-10 border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
-            disabled={isLoading}
-          />
-        </div>
+        <Input
+          label="Email atau Username"
+          placeholder="candidat@email.com atau username"
+          type="text"
+          value={loginInput}
+          onChange={(e) => setLoginInput(e.target.value)}
+          error={errors.login}
+          leftIcon={<Mail className="h-4.5 w-4.5" />}
+          className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+          disabled={isLoading}
+        />
 
-        <div className="relative">
-          <div className="absolute top-[34px] left-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
-            <KeyRound className="h-4.5 w-4.5" />
-          </div>
-          <Input
-            label="Kata Sandi"
-            placeholder="••••••••"
-            type={showPassword ? "text" : "password"}
-            value={passwordInput}
-            onChange={(e) => setPasswordInput(e.target.value)}
-            error={errors.password}
-            className="pl-10 pr-10 border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
-            disabled={isLoading}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute top-[34px] right-3.5 flex items-center text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer"
-            tabIndex={-1}
-          >
-            {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
-          </button>
-        </div>
+        <Input
+          label="Kata Sandi"
+          placeholder="••••••••"
+          type={showPassword ? "text" : "password"}
+          value={passwordInput}
+          onChange={(e) => setPasswordInput(e.target.value)}
+          error={errors.password}
+          leftIcon={<KeyRound className="h-4.5 w-4.5" />}
+          rightIcon={
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300 cursor-pointer"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+            </button>
+          }
+          className="border-zinc-250 dark:border-zinc-800 bg-white/70 dark:bg-zinc-950/40 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-650"
+          disabled={isLoading}
+        />
 
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center">
