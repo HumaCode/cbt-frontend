@@ -16,6 +16,7 @@ export interface Category {
   id: string;
   name: string;
   description?: string;
+  passing_grade?: number | null;
 }
 
 export interface QuestionOption {
@@ -50,6 +51,7 @@ export interface Assessment {
   randomize_questions: boolean;
   randomize_options: boolean;
   passing_grade: string | number;
+  passing_grade_type?: 'overall' | 'per_category';
   questions?: Question[];
   groups?: Group[];
 }

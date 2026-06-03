@@ -48,6 +48,7 @@ export default function AssessmentsPage() {
   const [passingGrade, setPassingGrade] = useState(50.00);
   const [randomizeQuestions, setRandomizeQuestions] = useState(false);
   const [randomizeOptions, setRandomizeOptions] = useState(false);
+  const [passingGradeType, setPassingGradeType] = useState<'overall' | 'per_category'>('overall');
   
   // Selected Questions mapping
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<Record<string, boolean>>({});
@@ -106,6 +107,7 @@ export default function AssessmentsPage() {
     setDurationMinutes(60);
     setMaxAttempts(1);
     setPassingGrade(50.00);
+    setPassingGradeType('overall');
     setRandomizeQuestions(false);
     setRandomizeOptions(false);
     setSelectedQuestionIds({});
@@ -125,6 +127,7 @@ export default function AssessmentsPage() {
       setDurationMinutes(detail.duration_minutes);
       setMaxAttempts(detail.max_attempts || 1);
       setPassingGrade(parseFloat(String(detail.passing_grade || 50.00)));
+      setPassingGradeType((detail.passing_grade_type as 'overall' | 'per_category') || 'overall');
       setRandomizeQuestions(!!detail.randomize_questions);
       setRandomizeOptions(!!detail.randomize_options);
 
@@ -170,9 +173,10 @@ export default function AssessmentsPage() {
       duration_minutes: Number(durationMinutes),
       max_attempts: Number(maxAttempts),
       passing_grade: Number(passingGrade),
+      passing_grade_type: passingGradeType,
       randomize_questions: randomizeQuestions,
       randomize_options: randomizeOptions,
-      questions: finalQuestionIds, // Send questions ID array
+      questions: finalQuestionIds,
     };
 
     try {
@@ -474,6 +478,87 @@ export default function AssessmentsPage() {
               required
               disabled={submitting}
             />
+          </div>
+
+          {/* KKM Type Selector */}
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Mode Penilaian KKM</label>
+            <div className="flex gap-3">
+              <label className={`flex-1 flex items-center gap-2.5 border rounded-xl p-3 cursor-pointer transition-all ${
+                passingGradeType === 'overall'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                  : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+              }`}>
+                <input
+                  type="radio"
+                  name="passing_grade_type"
+                  value="overall"
+                  checked={passingGradeType === 'overall'}
+                  onChange={() => setPassingGradeType('overall')}
+                  className="accent-blue-600"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Keseluruhan</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">KKM dihitung dari total nilai ujian</p>
+                </div>
+              </label>
+              <label className={`flex-1 flex items-center gap-2.5 border rounded-xl p-3 cursor-pointer transition-all ${
+                passingGradeType === 'per_category'
+                  ? 'border-amber-500 bg-amber-50 dark:bg-amber-950/20'
+                  : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700'
+              }`}>
+                <input
+                  type="radio"
+                  name="passing_grade_type"
+                  value="per_category"
+                  checked={passingGradeType === 'per_category'}
+                  onChange={() => setPassingGradeType('per_category')}
+                  className="accent-amber-600"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Per Kategori</p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">KKM tiap kategori soal harus terpenuhi</p>
+                </div>
+              </label>
+            </div>
+            {passingGradeType === 'per_category' && (
+              <div className="mt-1 rounded-xl border border-amber-200/60 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 p-3">
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-2">KKM per kategori soal yang digunakan:</p>
+                {(() => {
+                  const selectedIds = Object.keys(selectedQuestionIds).filter(id => selectedQuestionIds[id]);
+                  const selectedQuestions = questions.filter(q => selectedIds.includes(q.id));
+                  const catMap: Record<string, { name: string; kkm: number | null | undefined }> = {};
+                  selectedQuestions.forEach(q => {
+                    const cat = categories.find(c => c.id === q.category_id);
+                    if (cat && !catMap[cat.id]) {
+                      catMap[cat.id] = { name: cat.name, kkm: cat.passing_grade };
+                    }
+                  });
+                  const catList = Object.values(catMap);
+                  if (catList.length === 0) {
+                    return <p className="text-xs text-amber-600/70 dark:text-amber-400/70">Pilih soal terlebih dahulu untuk melihat KKM kategori.</p>;
+                  }
+                  return (
+                    <div className="flex flex-wrap gap-2">
+                      {catList.map((cat) => (
+                        <span key={cat.name} className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border ${
+                          cat.kkm != null
+                            ? 'bg-white dark:bg-zinc-900 border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300'
+                            : 'bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400'
+                        }`}>
+                          {cat.name}
+                          {cat.kkm != null ? (
+                            <span className="font-bold text-amber-600 dark:text-amber-400">: {cat.kkm}</span>
+                          ) : (
+                            <span className="text-zinc-400 dark:text-zinc-500 font-normal">(tanpa KKM)</span>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-6 py-2">

@@ -76,11 +76,11 @@ export const assessmentRepository = {
     if (Array.isArray(resData)) return resData;
     return [];
   },
-  async createCategory(data: { name: string; description?: string }): Promise<Category> {
+  async createCategory(data: { name: string; description?: string; passing_grade?: number | null }): Promise<Category> {
     const response = await api.post('/categories', data);
     return response.data.data;
   },
-  async updateCategory(id: string, data: { name: string; description?: string }): Promise<Category> {
+  async updateCategory(id: string, data: { name: string; description?: string; passing_grade?: number | null }): Promise<Category> {
     const response = await api.put(`/categories/${id}`, data);
     return response.data.data;
   },
@@ -220,6 +220,7 @@ export const assessmentRepository = {
     randomize_questions?: boolean;
     randomize_options?: boolean;
     passing_grade?: number;
+    passing_grade_type?: 'overall' | 'per_category';
     questions?: string[];
   }): Promise<Assessment> {
     const response = await api.post('/assessments', data);
@@ -234,6 +235,7 @@ export const assessmentRepository = {
     randomize_questions?: boolean;
     randomize_options?: boolean;
     passing_grade?: number;
+    passing_grade_type?: 'overall' | 'per_category';
     questions?: string[];
   }): Promise<Assessment> {
     const response = await api.put(`/assessments/${id}`, data);

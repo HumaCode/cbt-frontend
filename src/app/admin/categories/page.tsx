@@ -52,6 +52,7 @@ export default function CategoriesPage() {
   // Form states
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [passingGrade, setPassingGrade] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
   const fetchCategories = async () => {
@@ -79,6 +80,7 @@ export default function CategoriesPage() {
     setSelectedCategory(null);
     setName('');
     setDescription('');
+    setPassingGrade('');
     setIsOpen(true);
   };
 
@@ -86,6 +88,7 @@ export default function CategoriesPage() {
     setSelectedCategory(cat);
     setName(cat.name);
     setDescription(cat.description || '');
+    setPassingGrade(cat.passing_grade != null ? String(cat.passing_grade) : '');
     setIsOpen(true);
   };
 
@@ -93,24 +96,21 @@ export default function CategoriesPage() {
     e.preventDefault();
     if (!name.trim()) return;
 
+    const gradeVal = passingGrade.trim() !== '' ? parseFloat(passingGrade) : null;
+    const payload = {
+      name,
+      description,
+      passing_grade: gradeVal !== null && !isNaN(gradeVal) ? gradeVal : null,
+    };
+
     setSubmitting(true);
     try {
       if (selectedCategory) {
-        // Edit
-        await assessmentRepository.updateCategory(selectedCategory.id, { name, description });
-        addToast({
-          type: 'success',
-          title: 'Berhasil',
-          message: 'Kategori berhasil diperbarui.',
-        });
+        await assessmentRepository.updateCategory(selectedCategory.id, payload);
+        addToast({ type: 'success', title: 'Berhasil', message: 'Kategori berhasil diperbarui.' });
       } else {
-        // Create
-        await assessmentRepository.createCategory({ name, description });
-        addToast({
-          type: 'success',
-          title: 'Berhasil',
-          message: 'Kategori baru berhasil ditambahkan.',
-        });
+        await assessmentRepository.createCategory(payload);
+        addToast({ type: 'success', title: 'Berhasil', message: 'Kategori baru berhasil ditambahkan.' });
       }
       setIsOpen(false);
       fetchCategories();
@@ -223,8 +223,9 @@ export default function CategoriesPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200/60 dark:border-zinc-800/80">
-                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 w-1/4">Nama Kategori</th>
+                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 w-1/3">Nama Kategori</th>
                       <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">Deskripsi</th>
+                      <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 text-center w-28">KKM</th>
                       <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400 text-right w-36">Aksi</th>
                     </tr>
                   </thead>
@@ -233,6 +234,15 @@ export default function CategoriesPage() {
                       <tr key={cat.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-800/20">
                         <td className="px-6 py-4 font-bold text-zinc-900 dark:text-zinc-100">{cat.name}</td>
                         <td className="px-6 py-4 text-sm text-zinc-600 dark:text-zinc-400">{cat.description || '-'}</td>
+                        <td className="px-6 py-4 text-center">
+                          {cat.passing_grade != null ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/40 text-xs font-bold">
+                              {cat.passing_grade}
+                            </span>
+                          ) : (
+                            <span className="text-zinc-400 dark:text-zinc-600 text-xs">—</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-right space-x-2">
                           <Button
                             variant="outline"
@@ -346,8 +356,30 @@ export default function CategoriesPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={submitting}
-              className="w-full p-3 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white outline-none min-h-[100px] text-sm"
+              className="w-full p-3 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white outline-none min-h-[80px] text-sm"
             />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+              KKM / Nilai Minimum Lulus{' '}
+              <span className="font-normal text-zinc-400">(Opsional, 0–100)</span>
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={0.01}
+                placeholder="Misal: 75"
+                value={passingGrade}
+                onChange={(e) => setPassingGrade(e.target.value)}
+                disabled={submitting}
+                className="w-full px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 dark:text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none text-sm"
+              />
+            </div>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              Jika diisi, nilai minimal kelulusan untuk kategori ini dapat digunakan saat membuat jadwal ujian.
+            </p>
           </div>
         </form>
       </Modal>
