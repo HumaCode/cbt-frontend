@@ -209,6 +209,16 @@ export const assessmentRepository = {
   async deleteQuestion(id: string): Promise<void> {
     await api.delete(`/questions/${id}`);
   },
+  async importQuestions(categoryId: string, file: File): Promise<{ imported_count: number }> {
+    const formData = new FormData();
+    formData.append('category_id', categoryId);
+    formData.append('file', file);
+
+    const response = await api.post('/questions/import', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data.data;
+  },
 
   // Assessments CRUD
   async createAssessment(data: {

@@ -22,6 +22,65 @@ interface ExamState {
   clearSession: () => void;
 }
 
+// Helper functions for seeded deterministic randomization
+function seedRandom(seedStr: string) {
+  let h = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    h = Math.imul(31, h) + seedStr.charCodeAt(i) | 0;
+  }
+  return function() {
+    let t = h += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function seededShuffle<T>(array: T[], seed: string): T[] {
+  const rand = seedRandom(seed);
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    const temp = shuffled[i];
+    shuffled[i] = shuffled[j];
+    shuffled[j] = temp;
+  }
+  return shuffled;
+}
+
+const processQuestions = (session: AssessmentSession): Question[] => {
+  const questions = session.assessment?.questions || [];
+  
+  // Sort questions by pivot order_no if available
+  const sortedQuestions = [...questions].sort((a, b) => {
+    const orderA = a.pivot?.order_no ?? 0;
+    const orderB = b.pivot?.order_no ?? 0;
+    return orderA - orderB;
+  });
+
+  let finalQuestions = sortedQuestions;
+
+  // Shuffle questions if randomize_questions is enabled
+  if (session.assessment?.randomize_questions) {
+    finalQuestions = seededShuffle(sortedQuestions, session.id);
+  }
+
+  // Shuffle options for each question if randomize_options is enabled
+  if (session.assessment?.randomize_options) {
+    finalQuestions = finalQuestions.map((q) => {
+      if (q.options && q.options.length > 0) {
+        return {
+          ...q,
+          options: seededShuffle(q.options, `${session.id}_${q.id}`),
+        };
+      }
+      return q;
+    });
+  }
+
+  return finalQuestions;
+};
+
 export const useExamStore = create<ExamState>((set, get) => ({
   currentSession: null,
   questions: [],
@@ -36,15 +95,8 @@ export const useExamStore = create<ExamState>((set, get) => ({
     try {
       const session = await assessmentRepository.startSession(assessmentId);
       
-      // Load questions
-      const questions = session.assessment?.questions || [];
-      
-      // Sort questions by pivot order_no if available
-      const sortedQuestions = [...questions].sort((a, b) => {
-        const orderA = a.pivot?.order_no ?? 0;
-        const orderB = b.pivot?.order_no ?? 0;
-        return orderA - orderB;
-      });
+      // Process, sort and randomize questions/options
+      const finalQuestions = processQuestions(session);
 
       // Populate localAnswers from session's answers
       const initialAnswers: Record<string, string | null> = {};
@@ -70,7 +122,7 @@ export const useExamStore = create<ExamState>((set, get) => ({
 
       set({
         currentSession: session,
-        questions: sortedQuestions,
+        questions: finalQuestions,
         currentQuestionIndex: 0,
         localAnswers: initialAnswers,
         warningCount: 0,
@@ -97,12 +149,7 @@ export const useExamStore = create<ExamState>((set, get) => ({
   },
 
   resumeExamSession: (session: AssessmentSession) => {
-    const questions = session.assessment?.questions || [];
-    const sortedQuestions = [...questions].sort((a, b) => {
-      const orderA = a.pivot?.order_no ?? 0;
-      const orderB = b.pivot?.order_no ?? 0;
-      return orderA - orderB;
-    });
+    const finalQuestions = processQuestions(session);
 
     const initialAnswers: Record<string, string | null> = {};
     if (session.answers) {
@@ -126,7 +173,7 @@ export const useExamStore = create<ExamState>((set, get) => ({
 
     set({
       currentSession: session,
-      questions: sortedQuestions,
+      questions: finalQuestions,
       currentQuestionIndex: 0,
       localAnswers: initialAnswers,
       warningCount: 0,

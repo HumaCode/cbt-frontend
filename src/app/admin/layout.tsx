@@ -203,9 +203,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         {/* Top Navbar */}
-        <header className="sticky top-0 z-10 h-16 border-b border-zinc-200/60 dark:border-zinc-800/80 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md flex items-center justify-between px-6">
+        <header className="h-16 border-b border-zinc-200/60 dark:border-zinc-800/80 bg-white dark:bg-zinc-900 flex items-center justify-between px-6 flex-shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 -ml-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 lg:hidden cursor-pointer"
@@ -226,7 +226,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Dashboard Main Page Content */}
-        <main className="p-6 md:p-8 flex-1">
+        <main className="p-6 md:p-8 flex-1 overflow-y-auto">
           {children}
         </main>
       </div>

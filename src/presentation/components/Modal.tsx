@@ -9,6 +9,7 @@ interface ModalProps {
   footer?: React.ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   closeOnOverlayClick?: boolean;
+  hideScrollbar?: boolean;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -19,6 +20,7 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   size = 'md',
   closeOnOverlayClick = true,
+  hideScrollbar = false,
 }) => {
   useEffect(() => {
     if (isOpen) {
@@ -68,7 +70,9 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="px-6 py-5 overflow-y-auto max-h-[70vh] text-zinc-700 dark:text-zinc-300">
+        <div className={`px-6 py-5 overflow-y-auto max-h-[70vh] text-zinc-700 dark:text-zinc-300 ${
+          hideScrollbar ? '[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]' : ''
+        }`}>
           {children}
         </div>
 

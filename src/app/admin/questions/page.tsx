@@ -8,7 +8,7 @@ import { Button } from '@/presentation/components/Button';
 import { Modal } from '@/presentation/components/Modal';
 import { Input } from '@/presentation/components/Input';
 import { useToastStore } from '@/presentation/components/Toast';
-import { Plus, Edit2, Trash2, HelpCircle, Check, X, Layers, ArrowLeft, Folder, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, HelpCircle, Check, X, Layers, ArrowLeft, Folder, Search, ChevronLeft, ChevronRight, FileUp, Download } from 'lucide-react';
 import { Spinner } from '@/presentation/components/Spinner';
 import { getMediaUrl } from '@/infrastructure/api';
 
@@ -22,6 +22,9 @@ export default function QuestionsPage() {
   // Modal states
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   
   // Category navigation state
@@ -58,6 +61,83 @@ export default function QuestionsPage() {
     setActiveCategoryId(catId);
     handlePageChange(1);
     setSearchQuery(''); // reset search query on folder change
+  };
+
+  const downloadCSVTemplate = () => {
+    const headers = [
+      'soal',
+      'tipe',
+      'kesulitan',
+      'pilihan_a',
+      'pilihan_b',
+      'pilihan_c',
+      'pilihan_d',
+      'pilihan_e',
+      'kunci_jawaban',
+      'bobot_a',
+      'bobot_b',
+      'bobot_c',
+      'bobot_d',
+      'bobot_e'
+    ].join(',');
+    
+    const rowExample1 = [
+      '"Siapakah presiden pertama Indonesia?"',
+      'pg',
+      'easy',
+      '"Ir. Soekarno"',
+      '"Moh. Hatta"',
+      '"Soeharto"',
+      '"B.J. Habibie"',
+      '"Gus Dur"',
+      'A',
+      '5',
+      '0',
+      '0',
+      '0',
+      '0'
+    ].join(',');
+    
+    const csvContent = "data:text/csv;charset=utf-8," + headers + "\n" + rowExample1;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "template_import_soal.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!importFile || !activeCategoryId) return;
+
+    setImporting(true);
+    try {
+      const result = await assessmentRepository.importQuestions(activeCategoryId, importFile);
+      addToast({
+        type: 'success',
+        title: 'Import Berhasil',
+        message: `Berhasil mengimpor ${result.imported_count} soal ke kategori ini.`,
+      });
+      setIsImportModalOpen(false);
+      setImportFile(null);
+      
+      // Refresh question list
+      setLoading(true);
+      const data = await assessmentRepository.getQuestions({ category_id: activeCategoryId, per_page: 'all' });
+      setQuestions(data);
+      setLoading(false);
+    } catch (err: any) {
+      console.error(err);
+      addToast({
+        type: 'error',
+        title: 'Import Gagal',
+        message: err.response?.data?.message || 'Gagal mengimpor file soal.',
+      });
+    } finally {
+      setImporting(false);
+    }
   };
 
   // File upload states
@@ -378,10 +458,22 @@ export default function QuestionsPage() {
           </p>
         </div>
         {activeCategoryId !== null && (
-          <Button onClick={handleOpenCreate} className="flex items-center gap-2" disabled={categories.length === 0}>
-            <Plus className="h-4 w-4" />
-            <span>Tambah Soal</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            {activeCategoryId !== 'all' && (
+              <Button
+                variant="outline"
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-2 border-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900 text-zinc-700 dark:text-zinc-300"
+              >
+                <FileUp className="h-4 w-4 text-zinc-500" />
+                <span>Import Soal</span>
+              </Button>
+            )}
+            <Button onClick={handleOpenCreate} className="flex items-center gap-2" disabled={categories.length === 0}>
+              <Plus className="h-4 w-4" />
+              <span>Tambah Soal</span>
+            </Button>
+          </div>
         )}
       </div>
 
@@ -652,9 +744,10 @@ export default function QuestionsPage() {
             </Button>
           </>
         }
-        size="lg"
+        size="xl"
+        hideScrollbar
       >
-        <form onSubmit={handleSave} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+        <form onSubmit={handleSave} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Category Select */}
             <div className="flex flex-col gap-1.5">
@@ -915,6 +1008,91 @@ export default function QuestionsPage() {
         <p className="text-zinc-600 dark:text-zinc-300 text-sm">
           Apakah Anda yakin ingin menghapus soal ini dari database? Tindakan ini tidak dapat dibatalkan.
         </p>
+      </Modal>
+
+      {/* Import Questions Modal */}
+      <Modal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Import Soal (Excel/CSV)"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setIsImportModalOpen(false)} disabled={importing}>
+              Batal
+            </Button>
+            <Button
+              onClick={handleImport}
+              className="bg-blue-650 hover:bg-blue-700 text-white"
+              isLoading={importing}
+              disabled={!importFile}
+            >
+              Proses Import
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 text-[11px] text-blue-700 dark:text-blue-300 space-y-2 max-h-[300px] overflow-y-auto">
+            <p className="font-bold text-xs">Panduan Format File Import:</p>
+            <p>1. Mendukung format file **.csv**, **.xlsx**, atau **.xls**.</p>
+            <p>2. Header kolom yang dikenali (tidak sensitif huruf besar/kecil):</p>
+            <ul className="list-disc pl-4 space-y-1">
+              <li><code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">soal</code> / <code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">content_text</code>: Isi teks pertanyaan (wajib).</li>
+              <li><code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">pilihan_a</code> s.d. <code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">pilihan_e</code>: Pilihan jawaban untuk Pilihan Ganda (PG).</li>
+              <li><code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">kunci_jawaban</code> / <code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">correct_option</code>: Huruf kunci jawaban (A/B/C/D/E, wajib untuk PG).</li>
+              <li><code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">bobot_a</code> s.d. <code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">bobot_e</code>: Skor bobot tiap opsi (opsional, jika kosong default 5 untuk opsi benar dan 0 untuk salah).</li>
+              <li><code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">tipe</code> / <code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">type</code>: <code className="italic">pg</code> atau <code className="italic">essay</code> (default <code className="italic">pg</code>).</li>
+              <li><code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">kesulitan</code> / <code className="font-semibold bg-white/60 dark:bg-zinc-900/60 px-1 py-0.5 rounded">difficulty</code>: <code className="italic">easy</code>, <code className="italic">medium</code>, atau <code className="italic">hard</code>.</li>
+            </ul>
+            <button
+              type="button"
+              onClick={downloadCSVTemplate}
+              className="mt-2.5 flex items-center gap-1.5 text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
+            >
+              <Download className="h-3.5 w-3.5" />
+              <span>Unduh Template CSV Contoh</span>
+            </button>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">Pilih File Soal</label>
+            <div className="flex items-center justify-center w-full">
+              <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-zinc-300 dark:border-zinc-800 rounded-xl cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900/30 transition-colors">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <FileUp className="w-10 h-10 text-zinc-400 mb-2" />
+                  {importFile ? (
+                    <p className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">{importFile.name}</p>
+                  ) : (
+                    <>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400"><span className="font-semibold">Klik untuk upload</span> atau drag & drop file</p>
+                      <p className="text-xs text-zinc-400 mt-1">Format .csv, .xlsx, atau .xls</p>
+                    </>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                  className="hidden"
+                  disabled={importing}
+                />
+              </label>
+            </div>
+            {importFile && (
+              <div className="flex items-center justify-between text-xs bg-zinc-50 dark:bg-zinc-950 p-2 rounded-lg border border-zinc-200 dark:border-zinc-900 mt-2">
+                <span className="text-zinc-600 dark:text-zinc-400 truncate max-w-[200px]">{importFile.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setImportFile(null)}
+                  className="text-red-500 hover:text-red-700 font-semibold"
+                  disabled={importing}
+                >
+                  Hapus
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </Modal>
     </div>
   );

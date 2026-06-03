@@ -10,7 +10,7 @@ import { Modal } from '@/presentation/components/Modal';
 import { Input } from '@/presentation/components/Input';
 import { DateTimePicker } from '@/presentation/components/DateTimePicker';
 import { useToastStore } from '@/presentation/components/Toast';
-import { Plus, Edit2, Trash2, BookOpen, Clock, Award, Calendar, CheckSquare, Square, Activity, Share2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, BookOpen, Clock, Award, Calendar, CheckSquare, Square, Activity, Share2, X } from 'lucide-react';
 import { Spinner } from '@/presentation/components/Spinner';
 
 export default function AssessmentsPage() {
@@ -55,6 +55,7 @@ export default function AssessmentsPage() {
   
   // Category filters mapping in creation modal
   const [filterCategoryIds, setFilterCategoryIds] = useState<string[]>([]);
+  const [questionSearchQuery, setQuestionSearchQuery] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -97,12 +98,8 @@ export default function AssessmentsPage() {
   const handleOpenCreate = () => {
     setSelectedAssessment(null);
     setTitle('');
-    
-    // Default dates: now and now + 7 days
-    const now = new Date();
-    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    setStartDate(formatDateTimeLocal(now.toISOString()));
-    setEndDate(formatDateTimeLocal(nextWeek.toISOString()));
+    setStartDate('');
+    setEndDate('');
     
     setDurationMinutes(60);
     setMaxAttempts(1);
@@ -112,6 +109,7 @@ export default function AssessmentsPage() {
     setRandomizeOptions(false);
     setSelectedQuestionIds({});
     setFilterCategoryIds([]);
+    setQuestionSearchQuery('');
     setIsOpen(true);
   };
 
@@ -138,6 +136,7 @@ export default function AssessmentsPage() {
       });
       setSelectedQuestionIds(qMap);
       setFilterCategoryIds([]);
+      setQuestionSearchQuery('');
       setIsOpen(true);
     } catch (err) {
       console.error(err);
@@ -257,9 +256,14 @@ export default function AssessmentsPage() {
     });
   };
 
-  const filteredQuestions = filterCategoryIds.length === 0
-    ? questions
-    : questions.filter((q) => filterCategoryIds.includes(q.category_id));
+  const filteredQuestions = (
+    filterCategoryIds.length === 0
+      ? questions
+      : questions.filter((q) => filterCategoryIds.includes(q.category_id))
+  ).filter((q) => {
+    if (!questionSearchQuery.trim()) return true;
+    return q.content_text.toLowerCase().includes(questionSearchQuery.toLowerCase());
+  });
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -419,9 +423,10 @@ export default function AssessmentsPage() {
             </Button>
           </>
         }
-        size="lg"
+        size="xl"
+        hideScrollbar
       >
-        <form onSubmit={handleSave} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+        <form onSubmit={handleSave} className="space-y-4">
           <Input
             label="Judul Ujian"
             placeholder="Masukkan judul ujian (misal: Ujian Akhir Semester Fisika)"
@@ -639,7 +644,27 @@ export default function AssessmentsPage() {
               </div>
             </div>
 
-            <div className="space-y-2.5 max-h-[220px] overflow-y-auto border border-zinc-250 dark:border-zinc-800 rounded-xl p-3.5 bg-zinc-50/50 dark:bg-zinc-950/20">
+            {/* Search Input for Question Checklist */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Cari kata kunci isi soal di bawah..."
+                value={questionSearchQuery}
+                onChange={(e) => setQuestionSearchQuery(e.target.value)}
+                className="w-full pl-3 pr-8 py-2 rounded-xl border border-zinc-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white dark:border-zinc-800 dark:bg-zinc-950 dark:text-white outline-none text-xs"
+              />
+              {questionSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setQuestionSearchQuery('')}
+                  className="absolute right-2.5 top-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-2.5 max-h-[380px] overflow-y-auto border border-zinc-250 dark:border-zinc-800 rounded-xl p-3.5 bg-zinc-50/50 dark:bg-zinc-950/20">
               {filteredQuestions.length === 0 ? (
                 <p className="text-zinc-500 dark:text-zinc-400 text-center py-6 text-sm">Tidak ada soal dalam filter kategori terpilih.</p>
               ) : (
