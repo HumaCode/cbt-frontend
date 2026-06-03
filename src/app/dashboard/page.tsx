@@ -34,6 +34,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   
   // Modal states
   const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
@@ -43,13 +44,17 @@ export default function DashboardPage() {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const userData = await authRepository.me();
         setUser(userData);
 
-        const activeAssessments = await assessmentRepository.getAssessments({ active: 1 });
-        setAssessments(activeAssessments);
+        const allAssessments = await assessmentRepository.getAssessments();
+        setAssessments(allAssessments);
       } catch (err: any) {
         console.error(err);
         addToast({
@@ -64,6 +69,45 @@ export default function DashboardPage() {
 
     fetchData();
   }, [addToast]);
+
+  const getExamStatus = (startDateStr: string, endDateStr: string) => {
+    if (!mounted) {
+      return {
+        isActive: true,
+        badgeText: 'Aktif',
+        badgeClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-900/30',
+        buttonText: 'Mulai Ujian',
+      };
+    }
+    const now = new Date();
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    if (now < startDate) {
+      return {
+        isActive: false,
+        badgeText: 'Belum Mulai',
+        badgeClass: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200/40 dark:border-amber-900/30',
+        buttonText: 'Belum Waktunya',
+      };
+    }
+
+    if (now > endDate) {
+      return {
+        isActive: false,
+        badgeText: 'Kedaluwarsa',
+        badgeClass: 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800/60 dark:text-zinc-400 border border-zinc-200/40 dark:border-zinc-800/30',
+        buttonText: 'Sudah Selesai',
+      };
+    }
+
+    return {
+      isActive: true,
+      badgeText: 'Aktif',
+      badgeClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-900/30',
+      buttonText: 'Mulai Ujian',
+    };
+  };
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -87,6 +131,15 @@ export default function DashboardPage() {
   };
 
   const handleOpenStartModal = (assessment: Assessment) => {
+    const status = getExamStatus(assessment.start_date, assessment.end_date);
+    if (!status.isActive) {
+      addToast({
+        type: 'warning',
+        title: 'Akses Dibatasi',
+        message: 'Anda hanya dapat mengakses ujian pada rentang waktu jadwal yang ditentukan.',
+      });
+      return;
+    }
     setSelectedAssessment(assessment);
     setIsStartModalOpen(true);
   };
@@ -200,48 +253,52 @@ export default function DashboardPage() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {assessments.map((assessment) => (
-                <Card key={assessment.id} hoverable className="flex flex-col justify-between h-full bg-white dark:bg-zinc-900/30">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <span className="inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400">
-                        Aktif
-                      </span>
-                      <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 line-clamp-2">
-                        {assessment.title}
-                      </h3>
-                    </div>
+              {assessments.map((assessment) => {
+                const status = getExamStatus(assessment.start_date, assessment.end_date);
+                return (
+                  <Card key={assessment.id} hoverable={status.isActive} className={`flex flex-col justify-between h-full bg-white dark:bg-zinc-900/30 ${!status.isActive ? 'opacity-70' : ''}`}>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-semibold ${status.badgeClass}`}>
+                          {status.badgeText}
+                        </span>
+                        <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50 line-clamp-2">
+                          {assessment.title}
+                        </h3>
+                      </div>
 
-                    <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-zinc-400" />
-                        <span>Durasi: {assessment.duration_minutes} Menit</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Award className="h-4 w-4 text-zinc-400" />
-                        <span>Kriteria Kelulusan: KKM {assessment.passing_grade}</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <Calendar className="h-4 w-4 text-zinc-400 mt-0.5" />
-                        <div className="flex flex-col">
-                          <span>Mulai: {new Date(assessment.start_date).toLocaleString('id-ID')}</span>
-                          <span>Selesai: {new Date(assessment.end_date).toLocaleString('id-ID')}</span>
+                      <div className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-zinc-400" />
+                          <span>Durasi: {assessment.duration_minutes} Menit</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Award className="h-4 w-4 text-zinc-400" />
+                          <span>Kriteria Kelulusan: KKM {assessment.passing_grade}</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <Calendar className="h-4 w-4 text-zinc-400 mt-0.5" />
+                          <div className="flex flex-col">
+                            <span>Mulai: {new Date(assessment.start_date).toLocaleString('id-ID')}</span>
+                            <span>Selesai: {new Date(assessment.end_date).toLocaleString('id-ID')}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/50">
-                    <Button
-                      onClick={() => handleOpenStartModal(assessment)}
-                      className="w-full justify-center group"
-                    >
-                      <span>Mulai Ujian</span>
-                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+                    <div className="mt-6 pt-4 border-t border-zinc-100 dark:border-zinc-800/50">
+                      <Button
+                        onClick={() => handleOpenStartModal(assessment)}
+                        className="w-full justify-center group"
+                        disabled={!status.isActive}
+                      >
+                        <span>{status.buttonText}</span>
+                        {status.isActive && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </div>
