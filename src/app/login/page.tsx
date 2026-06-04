@@ -146,7 +146,7 @@ function LoginForm() {
         <Button
           type="submit"
           isLoading={isLoading}
-          className="w-full justify-center bg-gradient-to-r from-blue-650 to-indigo-650 hover:from-blue-600 hover:to-indigo-600 text-white py-3 rounded-xl shadow-lg shadow-blue-500/10 cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0"
+          className="w-full justify-center py-3 rounded-xl shadow-lg cursor-pointer transition-transform hover:-translate-y-0.5 active:translate-y-0"
         >
           Masuk Sekarang
         </Button>
