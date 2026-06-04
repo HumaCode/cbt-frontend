@@ -48,6 +48,7 @@ function LoginForm() {
       router.push(redirect);
     } catch (err: any) {
       setIsLoading(false);
+      console.error('Validation errors:', JSON.stringify(err.response?.data?.errors));
       console.error('AxiosError details:', {
         url: err.config?.url,
         method: err.config?.method,
