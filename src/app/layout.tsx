@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Geist } from "next/font/google";
 import "./globals.css";
 import { ToastContainer } from "@/presentation/components/Toast";
 
 import { BackgroundParticles } from "@/presentation/components/BackgroundParticles";
+import { cn } from "@/lib/utils";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: "CBT Portal - Sistem Ujian Online Terintegrasi",
@@ -23,7 +21,7 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${inter.variable} h-full antialiased`}
+      className={cn("h-full", "antialiased", "font-sans", geist.variable)}
       suppressHydrationWarning
     >
       <head>

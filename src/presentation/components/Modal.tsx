@@ -1,5 +1,12 @@
-import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
+import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface ModalProps {
   isOpen: boolean;
@@ -22,52 +29,30 @@ export const Modal: React.FC<ModalProps> = ({
   closeOnOverlayClick = true,
   hideScrollbar = false,
 }) => {
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
   const sizeClasses = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
+    sm: 'sm:max-w-md',
+    md: 'sm:max-w-lg',
+    lg: 'sm:max-w-2xl',
+    xl: 'sm:max-w-4xl',
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300"
-        onClick={() => closeOnOverlayClick && onClose()}
-      />
-
-      {/* Modal Dialog */}
-      <div
-        className={`relative w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800/80 transform overflow-hidden transition-all duration-300 scale-100 flex flex-col ${sizeClasses[size]}`}
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open && closeOnOverlayClick) {
+        onClose();
+      }
+    }}>
+      <DialogContent
+        className={cn(
+          'p-0 overflow-hidden bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800 rounded-2xl flex flex-col gap-0 max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2',
+          sizeClasses[size]
+        )}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/60">
-          {title ? (
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">{title}</h3>
-          ) : (
-            <div />
-          )}
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        <DialogHeader className="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800/60">
+          <DialogTitle className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            {title || '\u00A0'}
+          </DialogTitle>
+        </DialogHeader>
 
         {/* Content */}
         <div className={`px-6 py-5 overflow-y-auto max-h-[70vh] text-zinc-700 dark:text-zinc-300 ${
@@ -76,13 +61,12 @@ export const Modal: React.FC<ModalProps> = ({
           {children}
         </div>
 
-        {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-zinc-100 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/30">
+          <DialogFooter className="flex items-center justify-end gap-3 px-6 py-4 border-t border-zinc-100 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/30">
             {footer}
-          </div>
+          </DialogFooter>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
