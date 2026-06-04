@@ -36,6 +36,7 @@ function LoginForm() {
     }
 
     try {
+      console.log('Mengirim login request dengan:', { loginInput, passwordInput });
       const response = await authRepository.login(loginInput, passwordInput);
       addToast({
         type: 'success',
