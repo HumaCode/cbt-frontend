@@ -40,16 +40,35 @@ const buttonVariants = cva(
   }
 )
 
+import * as React from "react"
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  onClick,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  const lastClickTimeRef = React.useRef(0);
+
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const now = Date.now();
+    if (now - lastClickTimeRef.current < 50) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    lastClickTimeRef.current = now;
+    if (onClick) {
+      onClick(e as any);
+    }
+  };
+
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      onClick={handleClick}
       {...props}
     />
   )
