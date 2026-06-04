@@ -48,7 +48,15 @@ function LoginForm() {
       router.push(redirect);
     } catch (err: any) {
       setIsLoading(false);
-      console.error(err);
+      console.error('AxiosError details:', {
+        url: err.config?.url,
+        method: err.config?.method,
+        baseURL: err.config?.baseURL,
+        headers: err.config?.headers,
+        data: err.config?.data,
+        responseStatus: err.response?.status,
+        responseData: err.response?.data
+      });
 
       let errorMessage = err.response?.data?.message || 'Kredensial salah atau akun dinonaktifkan.';
       
