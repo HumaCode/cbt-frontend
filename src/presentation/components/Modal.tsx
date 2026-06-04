@@ -62,7 +62,7 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
 
         {footer && (
-          <DialogFooter className="flex items-center justify-end gap-3 px-6 py-4 border-t border-zinc-100 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/30">
+          <DialogFooter className="m-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-zinc-100 dark:border-zinc-800/60 bg-zinc-50 dark:bg-zinc-900/30">
             {footer}
           </DialogFooter>
         )}
