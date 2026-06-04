@@ -838,15 +838,18 @@ export default function QuestionsPage() {
             <div className="space-y-3 pt-3 border-t border-zinc-250 dark:border-zinc-800">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-bold text-zinc-900 dark:text-zinc-100">Opsi Pilihan Jawaban</label>
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={handleAddOption}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAddOption();
+                  }}
                   disabled={submitting}
+                  className="inline-flex shrink-0 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-3.5 py-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-all cursor-pointer outline-none select-none disabled:pointer-events-none disabled:opacity-50"
                 >
                   Tambah Opsi
-                </Button>
+                </button>
               </div>
 
               <div className="space-y-3">
@@ -932,16 +935,18 @@ export default function QuestionsPage() {
                     </div>
 
                     {/* Remove Option Button */}
-                    <Button
+                    <button
                       type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRemoveOption(idx)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleRemoveOption(idx);
+                      }}
                       disabled={options.length <= 2 || submitting}
-                      className="text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 p-2.5"
+                      className="inline-flex shrink-0 items-center justify-center rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-2 text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer outline-none select-none disabled:pointer-events-none disabled:opacity-50"
                     >
                       <X className="h-4 w-4" />
-                    </Button>
+                    </button>
                   </div>
                 ))}
               </div>
