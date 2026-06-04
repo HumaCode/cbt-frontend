@@ -50,22 +50,33 @@ function LoginForm() {
       setIsLoading(false);
       console.error(err);
 
+      let errorMessage = err.response?.data?.message || 'Kredensial salah atau akun dinonaktifkan.';
+      
       if (err.response?.data?.errors) {
         const backendErrors = err.response.data.errors;
         const mappedErrors: Record<string, string> = {};
+        const details: string[] = [];
         
         Object.keys(backendErrors).forEach((key) => {
           if (Array.isArray(backendErrors[key]) && backendErrors[key].length > 0) {
             mappedErrors[key] = backendErrors[key][0];
+            details.push(backendErrors[key][0]);
+          } else if (typeof backendErrors[key] === 'string') {
+            mappedErrors[key] = backendErrors[key];
+            details.push(backendErrors[key]);
           }
         });
         setErrors(mappedErrors);
+
+        if (details.length > 0) {
+          errorMessage = `${errorMessage} (${details.join(', ')})`;
+        }
       }
 
       addToast({
         type: 'error',
         title: 'Login Gagal',
-        message: err.response?.data?.message || 'Kredensial salah atau akun dinonaktifkan.',
+        message: errorMessage,
       });
     }
   };
